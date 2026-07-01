@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .env.local
+*-repomix.md
+current-project-repomix.md
+react-project-repomix.md

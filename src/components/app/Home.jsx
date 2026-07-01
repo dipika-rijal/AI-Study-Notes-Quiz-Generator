@@ -1,4 +1,6 @@
-export default function Home({ user, setActivePage }) {
+﻿import { Link } from "react-router-dom";
+
+export default function Home({ user }) {
   const displayName =
     user.displayName || user.email?.split("@")[0] || "Student";
 
@@ -44,7 +46,7 @@ export default function Home({ user, setActivePage }) {
           📚
         </div>
 
-        <div className="absolute right-16 bottom-8 grid h-12 w-12 place-items-center rounded-3xl bg-white/15 text-xl backdrop-blur">
+        <div className="absolute bottom-8 right-16 grid h-12 w-12 place-items-center rounded-3xl bg-white/15 text-xl backdrop-blur">
           ✨
         </div>
       </section>
@@ -87,12 +89,12 @@ export default function Home({ user, setActivePage }) {
             Turn a topic, pasted content, or video link into clean study notes.
           </p>
 
-          <button
-            onClick={() => setActivePage("notes")}
-            className="mt-7 w-full rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] px-5 py-4 font-black text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5"
+          <Link
+            to="/app/notes"
+            className="mt-7 block w-full rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] px-5 py-4 text-center font-black text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5"
           >
             Create Notes →
-          </button>
+          </Link>
         </div>
 
         <div className="rounded-[32px] border border-orange-100 bg-white/85 p-7 shadow-xl shadow-orange-100/70">
@@ -106,12 +108,12 @@ export default function Home({ user, setActivePage }) {
             Generate simple practice questions from your own study material.
           </p>
 
-          <button
-            onClick={() => setActivePage("quiz")}
-            className="mt-7 w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-4 font-black text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5"
+          <Link
+            to="/app/quiz"
+            className="mt-7 block w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-4 text-center font-black text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5"
           >
             Create Quiz →
-          </button>
+          </Link>
         </div>
       </section>
     </div>
