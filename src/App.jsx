@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./config/firebase";
 
@@ -14,28 +15,14 @@ import StartModal from "./components/modals/StartModal";
 import AuthModal from "./components/auth/AuthModal";
 
 import AppLayout from "./components/app/AppLayout";
+import Home from "./components/app/Home";
+import CreateNotes from "./components/app/CreateNotes";
+import CreateQuiz from "./components/app/CreateQuiz";
 
-export default function App() {
-  const [modalType, setModalType] = useState(null);
-  const [authMode, setAuthMode] = useState(null);
-  const [user, setUser] = useState(null);
+import ProtectedRoute from "./components/routes/ProtectedRoute";
+import GuestRoute from "./components/routes/GuestRoute";
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  async function handleLogout() {
-    await signOut(auth);
-  }
-
-  if (user) {
-    return <AppLayout user={user} logout={handleLogout} />;
-  }
-
+function LandingPage({ setModalType, setAuthMode }) {
   return (
     <div className="min-h-screen overflow-hidden bg-[#fffaf3] text-[#15132b]">
       <div className="pointer-events-none fixed -left-32 top-20 h-96 w-96 rounded-full bg-[#ffd8b6]/50 blur-3xl" />
@@ -51,6 +38,75 @@ export default function App() {
       </main>
 
       <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  const [modalType, setModalType] = useState(null);
+  const [authMode, setAuthMode] = useState(null);
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    await signOut(auth);
+  }
+
+  if (!authReady) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#fffaf3] text-[#15132b]">
+        <div className="rounded-3xl border border-purple-100 bg-white px-8 py-6 text-center shadow-xl shadow-purple-100">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#6757ff] to-[#9a7cff] text-white">
+            ✦
+          </div>
+          <p className="font-black text-[#6757ff]">Loading StudyGen AI...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <GuestRoute user={user}>
+              <LandingPage
+                setModalType={setModalType}
+                setAuthMode={setAuthMode}
+              />
+            </GuestRoute>
+          }
+        />
+
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute user={user}>
+              <AppLayout user={user} logout={handleLogout} />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Home user={user} />} />
+          <Route path="notes" element={<CreateNotes />} />
+          <Route path="quiz" element={<CreateQuiz />} />
+        </Route>
+
+        <Route
+          path="*"
+          element={<Navigate to={user ? "/app" : "/"} replace />}
+        />
+      </Routes>
 
       <StartModal
         modalType={modalType}
@@ -61,6 +117,6 @@ export default function App() {
         authMode={authMode}
         closeAuthModal={() => setAuthMode(null)}
       />
-    </div>
+    </>
   );
 }
