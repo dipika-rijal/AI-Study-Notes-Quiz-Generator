@@ -90,7 +90,7 @@ export default function Home({ user }) {
           </p>
 
           <Link
-            to="/app/notes"
+            to="/app/notes?type=topic"
             className="mt-7 block w-full rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] px-5 py-4 text-center font-black text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5"
           >
             Create Notes →
@@ -109,7 +109,7 @@ export default function Home({ user }) {
           </p>
 
           <Link
-            to="/app/quiz"
+            to="/app/quiz?type=topic"
             className="mt-7 block w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-4 text-center font-black text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5"
           >
             Create Quiz →

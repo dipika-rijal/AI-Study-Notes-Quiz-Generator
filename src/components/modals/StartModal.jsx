@@ -1,4 +1,13 @@
-export default function StartModal({ modalType, closeModal }) {
+﻿import { useNavigate } from "react-router-dom";
+
+export default function StartModal({
+  modalType,
+  user,
+  closeModal,
+  openAuthModal,
+}) {
+  const navigate = useNavigate();
+
   if (!modalType) return null;
 
   const isQuiz = modalType === "quiz";
@@ -8,36 +17,52 @@ export default function StartModal({ modalType, closeModal }) {
         {
           icon: "💭",
           title: "Write a topic",
-          text: "Create quiz questions from a topic.",
+          text: "Create quiz questions from a small topic.",
+          type: "topic",
         },
         {
-          icon: "📝",
-          title: "Paste study content",
-          text: "Generate quiz from notes or paragraphs.",
-        },
-        {
-          icon: "🎬",
-          title: "Paste video link",
-          text: "Create quiz from a video link later.",
+          icon: "📄",
+          title: "Upload or paste content",
+          text: "Create quiz from your notes or study material.",
+          type: "content",
         },
       ]
     : [
         {
           icon: "⌨️",
-          title: "Write a prompt",
-          text: "Describe what your notes should be about.",
+          title: "Write a topic",
+          text: "Create notes from a small topic.",
+          type: "topic",
         },
         {
           icon: "📄",
           title: "Upload or paste content",
-          text: "Add your existing notes or study material.",
+          text: "Create notes from your own study material.",
+          type: "content",
         },
         {
           icon: "🎥",
-          title: "Choose a video",
-          text: "Paste a YouTube video link to create notes later.",
+          title: "Paste video link",
+          text: "Create notes from a video link and topic details.",
+          type: "video",
         },
       ];
+
+  function handleCardClick(cardType) {
+    closeModal();
+
+    if (!user) {
+      openAuthModal("signup");
+      return;
+    }
+
+    if (isQuiz) {
+      navigate(`/app/quiz?type=${cardType}`);
+      return;
+    }
+
+    navigate(`/app/notes?type=${cardType}`);
+  }
 
   return (
     <div
@@ -62,15 +87,20 @@ export default function StartModal({ modalType, closeModal }) {
         </h2>
 
         <p className="mx-auto mt-4 max-w-xl text-center leading-7 text-[#77718f]">
-          {isQuiz
-            ? "Start with a topic, pasted content, or a video link. The real quiz flow will be added later."
-            : "Choose the easiest way to start. The real generator will be added later in React."}
+          {user
+            ? "Choose a starting method and continue inside your StudyGen workspace."
+            : "Login or create an account first, then continue to the generator workspace."}
         </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div
+          className={`mt-8 grid grid-cols-1 gap-4 ${
+            isQuiz ? "md:grid-cols-2" : "md:grid-cols-3"
+          }`}
+        >
           {cards.map((card) => (
             <button
               key={card.title}
+              onClick={() => handleCardClick(card.type)}
               className="rounded-3xl border border-purple-100 bg-white/80 p-7 text-center transition hover:-translate-y-2 hover:shadow-xl"
             >
               <div className="mb-4 text-4xl">{card.icon}</div>
@@ -83,6 +113,13 @@ export default function StartModal({ modalType, closeModal }) {
             </button>
           ))}
         </div>
+
+        {!user && (
+          <p className="mt-6 rounded-2xl bg-[#eeeaff] px-4 py-3 text-center text-sm font-bold text-[#6757ff]">
+            Login is required because your generated notes and quizzes will
+            belong to your account.
+          </p>
+        )}
       </div>
     </div>
   );
