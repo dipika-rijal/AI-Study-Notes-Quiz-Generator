@@ -110,7 +110,9 @@ export default function App() {
 
       <StartModal
         modalType={modalType}
+        user={user}
         closeModal={() => setModalType(null)}
+        openAuthModal={setAuthMode}
       />
 
       <AuthModal

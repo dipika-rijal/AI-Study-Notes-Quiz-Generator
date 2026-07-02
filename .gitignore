@@ -27,3 +27,7 @@ dist-ssr
 *-repomix.md
 current-project-repomix.md
 react-project-repomix.md
+
+src/config/localGroqKey.js
+
+.env
