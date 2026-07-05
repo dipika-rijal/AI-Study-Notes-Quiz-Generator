@@ -23,6 +23,11 @@ export default function Sidebar({ user, logout }) {
       label: "Create Quiz",
       icon: "◎",
     },
+    {
+      to: "/app/history",
+      label: "History",
+      icon: "◷",
+    },
   ];
 
   return (
