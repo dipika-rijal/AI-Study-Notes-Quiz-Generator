@@ -18,6 +18,7 @@ import AppLayout from "./components/app/AppLayout";
 import Home from "./components/app/Home";
 import CreateNotes from "./components/app/CreateNotes";
 import CreateQuiz from "./components/app/CreateQuiz";
+import History from "./pages/History";
 
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import GuestRoute from "./components/routes/GuestRoute";
@@ -100,6 +101,7 @@ export default function App() {
           <Route index element={<Home user={user} />} />
           <Route path="notes" element={<CreateNotes />} />
           <Route path="quiz" element={<CreateQuiz />} />
+          <Route path="history" element={<History />} />
         </Route>
 
         <Route

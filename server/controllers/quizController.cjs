@@ -1,0 +1,72 @@
+const Quiz = require("../models/Quiz.cjs");
+
+async function getQuizzes(req, res, next) {
+  try {
+    const quizzes = await Quiz.find().sort({ createdAt: -1 });
+    res.json({ success: true, total: quizzes.length, quizzes: quizzes });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getQuizById(req, res, next) {
+  try {
+    const quiz = await Quiz.findById(req.params.id);
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    res.json({ success: true, quiz: quiz });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createQuiz(req, res, next) {
+  try {
+    const quiz = await Quiz.create(req.body);
+    res.status(201).json({ success: true, message: "Quiz created", quiz: quiz });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateQuiz(req, res, next) {
+  try {
+    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    res.json({ success: true, message: "Quiz updated", quiz: quiz });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteQuiz(req, res, next) {
+  try {
+    const quiz = await Quiz.findByIdAndDelete(req.params.id);
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    res.json({ success: true, message: "Quiz deleted" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  getQuizzes,
+  getQuizById,
+  createQuiz,
+  updateQuiz,
+  deleteQuiz
+};

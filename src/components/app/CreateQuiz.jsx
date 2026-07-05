@@ -11,8 +11,11 @@ export default function CreateQuiz() {
   const [input, setInput] = useState("");
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [generatedQuiz, setGeneratedQuiz] = useState(null);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [saveStatus, setSaveStatus] = useState("empty");
+  const [savedQuizId, setSavedQuizId] = useState(null);
 
   const tabs = [
     {
@@ -31,6 +34,11 @@ export default function CreateQuiz() {
 
   useEffect(() => {
     const typeFromUrl = searchParams.get("type");
+    const savedQuizIdFromUrl = searchParams.get("savedQuizId");
+
+    if (savedQuizIdFromUrl) {
+      return;
+    }
 
     if (typeFromUrl === "content") {
       setInputType("content");
@@ -38,6 +46,14 @@ export default function CreateQuiz() {
     }
 
     setInputType("topic");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const savedQuizIdFromUrl = searchParams.get("savedQuizId");
+
+    if (savedQuizIdFromUrl) {
+      loadSavedQuiz(savedQuizIdFromUrl);
+    }
   }, [searchParams]);
 
   const currentTab = tabs.find((tab) => tab.id === inputType);
@@ -61,6 +77,155 @@ export default function CreateQuiz() {
     }
 
     setQuestionCount(numberValue);
+  }
+
+  function createFallbackExplanation(question, answer) {
+    return `This is correct because "${answer}" best matches what the question is asking about.`;
+  }
+
+  function normalizeQuiz(rawQuiz) {
+    return rawQuiz.map((item, index) => {
+      const options = Array.isArray(item.options) ? item.options : [];
+      const answer =
+        item.answer ||
+        item.correctAnswer ||
+        item.correct_answer ||
+        options[0] ||
+        "";
+
+      return {
+        id: `${Date.now()}-${index}`,
+        question: item.question || `Question ${index + 1}`,
+        options,
+        answer,
+        explanation:
+          item.explanation ||
+          item.reason ||
+          item.reasoning ||
+          createFallbackExplanation(item.question, answer),
+      };
+    });
+  }
+
+  function getFourOptions(item) {
+    let options = Array.isArray(item.options) ? item.options.filter(Boolean) : [];
+
+    if (item.answer && !options.includes(item.answer)) {
+      options = [item.answer, ...options];
+    }
+
+    options = [...new Set(options)].slice(0, 4);
+
+    while (options.length < 4) {
+      options.push(`Option ${options.length + 1}`);
+    }
+
+    return options;
+  }
+
+  function buildQuizPayload() {
+    return {
+      topic: input.trim().slice(0, 60) || "Untitled Quiz",
+      content: input.trim(),
+      difficulty: "medium",
+      sourceType: "ai-generated",
+      questions: generatedQuiz.map((item) => {
+        const options = getFourOptions(item);
+
+        return {
+          questionText: item.question,
+          options: options.map((option) => ({
+            text: option,
+            isCorrect: option === item.answer,
+            explanation:
+              item.explanation ||
+              `This is correct because "${item.answer}" best matches the question.`,
+          })),
+        };
+      }),
+    };
+  }
+
+  async function handleSaveQuiz() {
+    if (!generatedQuiz || generatedQuiz.length === 0) {
+      setErrorMessage("Generate a quiz first before saving.");
+      return;
+    }
+
+    try {
+      setSaveStatus("saving");
+      setErrorMessage("");
+
+      const response = await fetch("http://localhost:5000/api/quizzes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(buildQuizPayload()),
+      });
+
+      if (!response.ok) {
+        throw new Error("Quiz could not be saved.");
+      }
+
+      const result = await response.json();
+
+      setSavedQuizId(result.quiz?._id || null);
+      setSaveStatus("saved");
+    } catch (error) {
+      console.error(error);
+      setSaveStatus("unsaved");
+      setErrorMessage("Quiz was not saved. Make sure backend is running.");
+    }
+  }
+
+  function convertSavedQuizToFrontend(savedQuiz) {
+    return savedQuiz.questions.map((question, index) => {
+      const correctOption = question.options.find((option) => option.isCorrect);
+
+      return {
+        id: `${savedQuiz._id}-${index}`,
+        question: question.questionText,
+        options: question.options.map((option) => option.text),
+        answer: correctOption?.text || "",
+        explanation:
+          correctOption?.explanation ||
+          "This is the correct answer based on the saved quiz.",
+      };
+    });
+  }
+
+  async function loadSavedQuiz(savedQuizIdFromUrl) {
+    try {
+      setIsGenerating(true);
+      setErrorMessage("");
+
+      const response = await fetch(
+        `http://localhost:5000/api/quizzes/${savedQuizIdFromUrl}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Saved quiz could not be loaded.");
+      }
+
+      const result = await response.json();
+      const savedQuiz = result.quiz;
+
+      const convertedQuiz = convertSavedQuizToFrontend(savedQuiz);
+
+      setInput(savedQuiz.topic || "");
+      setInputType("topic");
+      setQuestionCount(convertedQuiz.length || 5);
+      setGeneratedQuiz(convertedQuiz);
+      setSelectedAnswers({});
+      setSaveStatus("saved");
+      setSavedQuizId(savedQuiz._id);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Could not open saved quiz from history.");
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   async function handleFileUpload(event) {
@@ -94,6 +259,8 @@ export default function CreateQuiz() {
       setInput(text);
       setUploadedFileName(file.name);
       setErrorMessage("");
+      setSaveStatus("empty");
+      setSavedQuizId(null);
     } catch (error) {
       setErrorMessage("Could not read the uploaded file. Try another file.");
     }
@@ -113,6 +280,9 @@ export default function CreateQuiz() {
     setIsGenerating(true);
     setErrorMessage("");
     setGeneratedQuiz(null);
+    setSelectedAnswers({});
+    setSaveStatus("empty");
+    setSavedQuizId(null);
 
     try {
       const quiz = await generateQuizWithAI(
@@ -125,7 +295,11 @@ export default function CreateQuiz() {
         throw new Error("AI did not return valid quiz questions.");
       }
 
-      setGeneratedQuiz(quiz);
+      const cleanQuiz = normalizeQuiz(quiz);
+
+      setGeneratedQuiz(cleanQuiz);
+      setSaveStatus("unsaved");
+      setSavedQuizId(null);
     } catch (error) {
       console.error(error);
       setErrorMessage(
@@ -137,12 +311,22 @@ export default function CreateQuiz() {
     }
   }
 
+  function handleSelectAnswer(questionIndex, option) {
+    setSelectedAnswers((previousAnswers) => ({
+      ...previousAnswers,
+      [questionIndex]: option,
+    }));
+  }
+
   function handleClear() {
     setInput("");
     setQuestionCount(5);
     setUploadedFileName("");
     setGeneratedQuiz(null);
+    setSelectedAnswers({});
     setErrorMessage("");
+    setSaveStatus("empty");
+    setSavedQuizId(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -222,7 +406,11 @@ export default function CreateQuiz() {
 
           <textarea
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              setSaveStatus("empty");
+              setSavedQuizId(null);
+            }}
             placeholder={currentTab.placeholder}
             className="min-h-[170px] w-full resize-none rounded-3xl border border-transparent bg-[#f3eee8] px-5 py-4 font-semibold leading-7 text-[#15132b] outline-none transition placeholder:text-[#b7adc4] focus:border-orange-400 focus:bg-white"
           />
@@ -312,11 +500,11 @@ export default function CreateQuiz() {
                 </div>
 
                 <h3 className="font-black text-orange-500">
-                  Groq is generating your quiz...
+                  Loading quiz...
                 </h3>
 
                 <p className="mt-2 max-w-sm text-sm leading-6 text-[#b0a8c2]">
-                  Creating {questionCount} questions from your input.
+                  Generating or opening your quiz.
                 </p>
               </div>
             ) : !generatedQuiz ? (
@@ -335,35 +523,102 @@ export default function CreateQuiz() {
               </div>
             ) : (
               <div className="space-y-4">
-                {generatedQuiz.map((item, index) => (
-                  <div
-                    key={`${item.question}-${index}`}
-                    className="rounded-3xl border border-orange-100 bg-[#fffaf3] p-5"
-                  >
-                    <h3 className="mb-4 font-black leading-7 text-[#15132b]">
-                      {index + 1}. {item.question}
-                    </h3>
+                <div className="flex flex-col gap-3 rounded-3xl border border-orange-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-[#15132b]">
+                      Save status
+                    </p>
 
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {item.options.map((option) => (
-                        <div
-                          key={option}
-                          className={`rounded-2xl px-4 py-3 text-sm font-semibold ${
-                            option === item.answer
-                              ? "bg-[#edfff6] text-emerald-700"
-                              : "bg-white text-[#77718f]"
-                          }`}
-                        >
-                          {option}
-                        </div>
-                      ))}
-                    </div>
-
-                    <p className="mt-4 rounded-2xl bg-[#edfff6] px-4 py-3 text-sm font-black text-emerald-700">
-                      Answer: {item.answer}
+                    <p className="mt-1 text-sm font-bold text-[#9a93b3]">
+                      {saveStatus === "unsaved" && "Not saved yet"}
+                      {saveStatus === "saving" && "Saving quiz..."}
+                      {saveStatus === "saved" &&
+                        (savedQuizId ? "Saved to History ✅" : "Saved ✅")}
+                      {saveStatus === "empty" && "Generate a quiz first"}
                     </p>
                   </div>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={handleSaveQuiz}
+                    disabled={saveStatus === "saving" || saveStatus === "saved"}
+                    className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saveStatus === "saved" ? "Saved ✅" : "Save Quiz"}
+                  </button>
+                </div>
+
+                {generatedQuiz.map((item, index) => {
+                  const selectedAnswer = selectedAnswers[index];
+                  const hasSelected = Boolean(selectedAnswer);
+                  const isCorrect = selectedAnswer === item.answer;
+
+                  return (
+                    <div
+                      key={item.id || `${item.question}-${index}`}
+                      className="rounded-3xl border border-orange-100 bg-[#fffaf3] p-5"
+                    >
+                      <h3 className="mb-4 font-black leading-7 text-[#15132b]">
+                        {index + 1}. {item.question}
+                      </h3>
+
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {item.options.map((option) => {
+                          const isSelected = selectedAnswer === option;
+                          const isRightAnswer = option === item.answer;
+
+                          let optionStyle = "bg-white text-[#77718f] hover:bg-[#fff0d0]";
+
+                          if (hasSelected && isRightAnswer) {
+                            optionStyle = "bg-[#edfff6] text-emerald-700";
+                          }
+
+                          if (hasSelected && isSelected && !isRightAnswer) {
+                            optionStyle = "bg-red-50 text-red-500";
+                          }
+
+                          return (
+                            <button
+                              type="button"
+                              key={option}
+                              onClick={() => handleSelectAnswer(index, option)}
+                              className={`rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${optionStyle}`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {!hasSelected ? (
+                        <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#9a93b3]">
+                          Click one option to check your answer.
+                        </p>
+                      ) : (
+                        <div className="mt-4 space-y-3">
+                          <p
+                            className={`rounded-2xl px-4 py-3 text-sm font-black ${
+                              isCorrect
+                                ? "bg-[#edfff6] text-emerald-700"
+                                : "bg-red-50 text-red-500"
+                            }`}
+                          >
+                            {isCorrect
+                              ? "Correct ✅"
+                              : `Wrong ❌ Correct answer: ${item.answer}`}
+                          </p>
+
+                          <p className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#655d80]">
+                            <span className="font-black text-[#15132b]">
+                              Why?
+                            </span>{" "}
+                            {item.explanation}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

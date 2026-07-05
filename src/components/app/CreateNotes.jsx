@@ -1,19 +1,22 @@
 ﻿import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { generateNotesWithAI } from "../../services/ai";
 
 export default function CreateNotes() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   const [inputType, setInputType] = useState("topic");
+  const [noteStyle, setNoteStyle] = useState("beginner");
   const [title, setTitle] = useState("");
   const [input, setInput] = useState("");
-  const [videoLink, setVideoLink] = useState("");
   const [uploadedFileName, setUploadedFileName] = useState("");
   const [generatedNotes, setGeneratedNotes] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [saveStatus, setSaveStatus] = useState("empty");
+  const [savedNoteId, setSavedNoteId] = useState(null);
 
   const tabs = [
     {
@@ -28,24 +31,141 @@ export default function CreateNotes() {
       icon: "▤",
       placeholder: "Paste your class notes here or upload a .txt / .md file...",
     },
-    {
-      id: "video",
-      label: "Video Link",
-      icon: "⌁",
-      placeholder:
-        "Write the video title/topic or paste any short description here...",
-    },
+  ];
+
+  const noteStyles = [
+    { id: "quick", label: "Quick", description: "Short definition only." },
+    { id: "beginner", label: "Beginner", description: "Simple + example." },
+    { id: "detailed", label: "Detailed", description: "More depth." },
+    { id: "exam", label: "Exam", description: "Revision style." },
   ];
 
   useEffect(() => {
+    const savedNoteIdFromUrl = searchParams.get("savedNoteId");
+
+    if (savedNoteIdFromUrl) {
+      loadSavedNote(savedNoteIdFromUrl);
+      return;
+    }
+
     const typeFromUrl = searchParams.get("type");
 
-    if (["topic", "content", "video"].includes(typeFromUrl)) {
-      setInputType(typeFromUrl);
+    if (typeFromUrl === "content") {
+      setInputType("content");
+      return;
     }
+
+    setInputType("topic");
   }, [searchParams]);
 
   const currentTab = tabs.find((tab) => tab.id === inputType);
+  const currentStyle = noteStyles.find((style) => style.id === noteStyle);
+
+  function resetSaveState() {
+    setSaveStatus("empty");
+    setSavedNoteId(null);
+  }
+
+  function getStyleInstruction() {
+    if (noteStyle === "quick") {
+      return "Make very short notes. Give only simple definition and 2-3 key points.";
+    }
+
+    if (noteStyle === "beginner") {
+      return "Explain for a beginner. Use simple meaning, real-life example, key points, and revision line.";
+    }
+
+    if (noteStyle === "detailed") {
+      return "Make detailed study notes. Include meaning, why it matters, example, key points, and revision line.";
+    }
+
+    if (noteStyle === "exam") {
+      return "Make exam revision notes. Use clear headings, important points, definitions, and memory line.";
+    }
+
+    return "Make simple beginner-friendly study notes.";
+  }
+
+  function getFinalInputForAI() {
+    return `
+Note style requested:
+${currentStyle?.label || "Beginner"}
+
+Instruction:
+${getStyleInstruction()}
+
+Topic or content:
+${input}
+    `.trim();
+  }
+
+  function buildNoteBody(notes) {
+    const pointsText = notes.points
+      .map((point, index) => `${index + 1}. ${point}`)
+      .join("\n");
+
+    return `
+Title:
+${notes.title}
+
+Summary:
+${notes.summary}
+
+Key Points:
+${pointsText || "No key points generated."}
+
+Revision Line:
+${notes.revisionLine}
+    `.trim();
+  }
+
+  function buildNotePayload() {
+    return {
+      title: generatedNotes.title || "Generated Notes",
+      body: buildNoteBody(generatedNotes),
+      category: currentStyle?.label || "General",
+      summary: generatedNotes.summary || "",
+      sourceType: inputType === "content" ? "pasted-content" : "manual",
+      sourceText: input,
+      tags: [inputType, noteStyle].filter(Boolean),
+    };
+  }
+
+  async function loadSavedNote(noteId) {
+    try {
+      setIsGenerating(true);
+      setErrorMessage("");
+
+      const response = await fetch("http://localhost:5000/api/notes/" + noteId);
+
+      if (!response.ok) {
+        throw new Error("Saved note not found. It may have been deleted or was not saved properly.");
+      }
+
+      const result = await response.json();
+      const note = result.note;
+
+      setTitle(note.title || "");
+      setInput(note.sourceText || note.title || "");
+      setInputType(note.sourceType === "pasted-content" ? "content" : "topic");
+
+      setGeneratedNotes({
+        title: note.title || "Saved Note",
+        summary: note.body || note.summary || "Saved note loaded from history.",
+        points: [],
+        revisionLine: "Saved note loaded from history.",
+      });
+
+      setSaveStatus("saved");
+      setSavedNoteId(note._id);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("Could not open this saved note. It may have been deleted or not saved properly. Try saving a new note and opening that one.");
+      navigate("/app/notes", { replace: true });
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   async function handleFileUpload(event) {
     const file = event.target.files?.[0];
@@ -78,34 +198,14 @@ export default function CreateNotes() {
       setInput(text);
       setUploadedFileName(file.name);
       setErrorMessage("");
+      resetSaveState();
     } catch (error) {
       setErrorMessage("Could not read the uploaded file. Try another file.");
     }
   }
 
-  function getFinalInputForAI() {
-    if (inputType === "video") {
-      return `
-Video link:
-${videoLink || "No video link provided"}
-
-Video title/topic/details:
-${input || "No extra video details provided"}
-      `.trim();
-    }
-
-    return input;
-  }
-
   async function handleGenerateNotes() {
-    const finalInput = getFinalInputForAI();
-
-    if (inputType === "video" && !videoLink.trim() && !input.trim()) {
-      setErrorMessage("Please paste a video link or write the video topic/title first.");
-      return;
-    }
-
-    if (inputType !== "video" && !input.trim()) {
+    if (!input.trim()) {
       setErrorMessage("Please enter a topic, paste content, or upload a file first.");
       return;
     }
@@ -113,9 +213,11 @@ ${input || "No extra video details provided"}
     setIsGenerating(true);
     setErrorMessage("");
     setGeneratedNotes(null);
+    setSaveStatus("empty");
+    setSavedNoteId(null);
 
     try {
-      const notes = await generateNotesWithAI(finalInput, currentTab.label);
+      const notes = await generateNotesWithAI(getFinalInputForAI(), currentTab.label);
 
       setGeneratedNotes({
         title: title.trim() || notes.title || "Generated Notes",
@@ -125,6 +227,8 @@ ${input || "No extra video details provided"}
           notes.revisionLine ||
           "Revise the summary and key points carefully.",
       });
+
+      setSaveStatus("unsaved");
     } catch (error) {
       console.error(error);
       setErrorMessage(
@@ -136,13 +240,48 @@ ${input || "No extra video details provided"}
     }
   }
 
+  async function handleSaveNote() {
+    if (!generatedNotes) {
+      setErrorMessage("Generate notes first before saving.");
+      return;
+    }
+
+    try {
+      setSaveStatus("saving");
+      setErrorMessage("");
+
+      const response = await fetch("http://localhost:5000/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(buildNotePayload()),
+      });
+
+      if (!response.ok) {
+        throw new Error("Note could not be saved.");
+      }
+
+      const result = await response.json();
+
+      setSavedNoteId(result.note?._id || null);
+      setSaveStatus("saved");
+    } catch (error) {
+      console.error(error);
+      setSaveStatus("unsaved");
+      setErrorMessage("Note was not saved. Make sure backend is running.");
+    }
+  }
+
   function handleClear() {
     setTitle("");
     setInput("");
-    setVideoLink("");
     setUploadedFileName("");
     setGeneratedNotes(null);
     setErrorMessage("");
+    setNoteStyle("beginner");
+    setSaveStatus("empty");
+    setSavedNoteId(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -162,7 +301,7 @@ ${input || "No extra video details provided"}
           </h1>
 
           <p className="mt-1 font-semibold text-[#9a93b3]">
-            Generate real AI study notes from a topic, file, or video link.
+            Generate and save AI study notes.
           </p>
         </div>
       </div>
@@ -173,7 +312,7 @@ ${input || "No extra video details provided"}
             What would you like notes on?
           </h2>
 
-          <div className="mb-5 grid grid-cols-3 rounded-2xl bg-[#f3eee8] p-1">
+          <div className="mb-5 grid grid-cols-2 rounded-2xl bg-[#f3eee8] p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -188,6 +327,37 @@ ${input || "No extra video details provided"}
                 {tab.label}
               </button>
             ))}
+          </div>
+
+          <div className="mb-5 rounded-3xl border border-purple-100 bg-[#fffaf3] p-4">
+            <label className="mb-3 block text-sm font-black text-[#15132b]">
+              Choose note style
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              {noteStyles.map((style) => (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => {
+                    setNoteStyle(style.id);
+                    resetSaveState();
+                  }}
+                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    noteStyle === style.id
+                      ? "border-[#6757ff] bg-[#eeeaff]"
+                      : "border-purple-100 bg-white hover:bg-[#f7f2ff]"
+                  }`}
+                >
+                  <p className="text-sm font-black text-[#15132b]">
+                    {style.label}
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-[#9a93b3]">
+                    {style.description}
+                  </p>
+                </button>
+              ))}
+            </div>
           </div>
 
           {inputType === "content" && (
@@ -208,10 +378,6 @@ ${input || "No extra video details provided"}
                 📁 Upload text file
               </button>
 
-              <p className="mt-3 text-xs font-bold text-[#9a93b3]">
-                Supported now: .txt and .md files. PDF/DOCX can be added later.
-              </p>
-
               {uploadedFileName && (
                 <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm font-black text-emerald-700">
                   Uploaded: {uploadedFileName}
@@ -220,29 +386,12 @@ ${input || "No extra video details provided"}
             </div>
           )}
 
-          {inputType === "video" && (
-            <div className="mb-4 rounded-3xl border border-orange-100 bg-[#fffaf3] p-4">
-              <label className="mb-2 block text-sm font-black text-[#15132b]">
-                Video link
-              </label>
-
-              <input
-                value={videoLink}
-                onChange={(event) => setVideoLink(event.target.value)}
-                placeholder="Paste YouTube or class video link here"
-                className="w-full rounded-2xl border border-transparent bg-white px-5 py-4 font-semibold text-[#15132b] outline-none transition placeholder:text-[#b7adc4] focus:border-[#6757ff]"
-              />
-
-              <p className="mt-3 text-xs font-bold leading-5 text-[#9a93b3]">
-                For now, StudyGen cannot read full video transcript automatically.
-                Add the video title/topic or short description below for better notes.
-              </p>
-            </div>
-          )}
-
           <textarea
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              resetSaveState();
+            }}
             placeholder={currentTab.placeholder}
             className="min-h-[190px] w-full resize-none rounded-3xl border border-transparent bg-[#f3eee8] px-5 py-4 font-semibold leading-7 text-[#15132b] outline-none transition placeholder:text-[#b7adc4] focus:border-[#6757ff] focus:bg-white"
           />
@@ -253,7 +402,10 @@ ${input || "No extra video details provided"}
 
           <input
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              resetSaveState();
+            }}
             placeholder="Leave blank to let AI create a title"
             className="mt-2 w-full rounded-2xl border border-transparent bg-[#f3eee8] px-5 py-4 font-semibold text-[#15132b] outline-none transition placeholder:text-[#b7adc4] focus:border-[#6757ff] focus:bg-white"
           />
@@ -267,12 +419,7 @@ ${input || "No extra video details provided"}
           <div className="mt-5 flex gap-3">
             <button
               onClick={handleGenerateNotes}
-              disabled={
-                isGenerating ||
-                (inputType === "video"
-                  ? !videoLink.trim() && !input.trim()
-                  : !input.trim())
-              }
+              disabled={isGenerating || !input.trim()}
               className="flex-1 rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] px-5 py-4 font-black text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGenerating ? "Generating with Groq..." : "✨ Generate Notes"}
@@ -305,10 +452,6 @@ ${input || "No extra video details provided"}
                 <h3 className="font-black text-[#6757ff]">
                   Groq is generating your notes...
                 </h3>
-
-                <p className="mt-2 max-w-sm text-sm leading-6 text-[#b0a8c2]">
-                  Wait a few seconds. This is now using real AI.
-                </p>
               </div>
             ) : !generatedNotes ? (
               <div className="flex min-h-[390px] flex-col items-center justify-center text-center">
@@ -321,14 +464,39 @@ ${input || "No extra video details provided"}
                 </h3>
 
                 <p className="mt-2 max-w-sm text-sm leading-6 text-[#b0a8c2]">
-                  Enter a topic, paste content, upload a file, or add video details.
+                  Enter a topic or paste content, then generate notes.
                 </p>
               </div>
             ) : (
               <div className="space-y-5">
+                <div className="flex flex-col gap-3 rounded-3xl border border-purple-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-black text-[#15132b]">
+                      Save status
+                    </p>
+
+                    <p className="mt-1 text-sm font-bold text-[#9a93b3]">
+                      {saveStatus === "unsaved" && "Not saved yet"}
+                      {saveStatus === "saving" && "Saving note..."}
+                      {saveStatus === "saved" &&
+                        (savedNoteId ? "Saved to History ✅" : "Saved ✅")}
+                      {saveStatus === "empty" && "Generate notes first"}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveNote}
+                    disabled={saveStatus === "saving" || saveStatus === "saved"}
+                    className="rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] px-5 py-3 text-sm font-black text-white shadow-lg shadow-purple-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saveStatus === "saved" ? "Saved ✅" : "Save Note"}
+                  </button>
+                </div>
+
                 <div className="rounded-3xl bg-[#fffaf3] p-5">
                   <p className="mb-2 text-xs font-black uppercase tracking-[0.2em] text-[#6757ff]">
-                    AI Study Note
+                    AI Study Note • {currentStyle?.label}
                   </p>
 
                   <h3 className="text-2xl font-black text-[#15132b]">
@@ -339,7 +507,7 @@ ${input || "No extra video details provided"}
                 <div>
                   <h4 className="mb-2 font-black text-[#15132b]">Summary</h4>
 
-                  <p className="leading-7 text-[#77718f]">
+                  <p className="whitespace-pre-line leading-7 text-[#77718f]">
                     {generatedNotes.summary}
                   </p>
                 </div>
@@ -374,3 +542,5 @@ ${input || "No extra video details provided"}
     </div>
   );
 }
+
+
