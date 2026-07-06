@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
 
 const quizAttemptSchema = new mongoose.Schema(
   {
@@ -40,3 +40,4 @@ const quizAttemptSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("QuizAttempt", quizAttemptSchema);
+

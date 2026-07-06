@@ -1,13 +1,13 @@
-const express = require("express");
+﻿const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const connectDB = require("./config/db.cjs");
+const connectDB = require("./config/db.js");
 
-const noteRoutes = require("./routes/noteRoutes.cjs");
-const quizRoutes = require("./routes/quizRoutes.cjs");
-const quizAttemptRoutes = require("./routes/quizAttemptRoutes.cjs");
-const historyRoutes = require("./routes/historyRoutes.cjs");
+const noteRoutes = require("./routes/noteRoutes.js");
+const quizRoutes = require("./routes/quizRoutes.js");
+const quizAttemptRoutes = require("./routes/quizAttemptRoutes.js");
+const historyRoutes = require("./routes/historyRoutes.js");
 
 const app = express();
 
@@ -54,3 +54,4 @@ connectDB()
     console.error("Backend failed to start:", error.message);
     process.exit(1);
   });
+

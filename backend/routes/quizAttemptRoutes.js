@@ -1,12 +1,13 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
 
 const {
   getQuizAttempts,
   createQuizAttempt
-} = require("../controllers/quizAttemptController.cjs");
+} = require("../controllers/quizAttemptController.js");
 
 router.get("/", getQuizAttempts);
 router.post("/", createQuizAttempt);
 
 module.exports = router;
+

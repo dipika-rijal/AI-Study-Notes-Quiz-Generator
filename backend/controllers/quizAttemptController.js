@@ -1,5 +1,5 @@
-const Quiz = require("../models/Quiz.cjs");
-const QuizAttempt = require("../models/QuizAttempt.cjs");
+﻿const Quiz = require("../models/Quiz.js");
+const QuizAttempt = require("../models/QuizAttempt.js");
 
 async function getQuizAttempts(req, res, next) {
   try {
@@ -111,3 +111,4 @@ module.exports = {
   getQuizAttempts,
   createQuizAttempt
 };
+

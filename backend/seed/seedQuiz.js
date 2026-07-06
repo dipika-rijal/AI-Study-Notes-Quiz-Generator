@@ -1,7 +1,7 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-const connectDB = require("../config/db.cjs");
-const Quiz = require("../models/Quiz.cjs");
+const connectDB = require("../config/db.js");
+const Quiz = require("../models/Quiz.js");
 
 async function seedQuiz() {
   await connectDB();
@@ -106,3 +106,4 @@ seedQuiz().catch(function (error) {
   console.error(error);
   process.exit(1);
 });
+

@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
 
 const {
@@ -7,7 +7,7 @@ const {
   createNote,
   updateNote,
   deleteNote
-} = require("../controllers/noteController.cjs");
+} = require("../controllers/noteController.js");
 
 router.get("/", getNotes);
 router.get("/:id", getNoteById);
@@ -16,3 +16,4 @@ router.put("/:id", updateNote);
 router.delete("/:id", deleteNote);
 
 module.exports = router;
+
