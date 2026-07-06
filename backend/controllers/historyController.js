@@ -1,6 +1,6 @@
-const Note = require("../models/Note.cjs");
-const Quiz = require("../models/Quiz.cjs");
-const QuizAttempt = require("../models/QuizAttempt.cjs");
+﻿const Note = require("../models/Note.js");
+const Quiz = require("../models/Quiz.js");
+const QuizAttempt = require("../models/QuizAttempt.js");
 
 async function getHistory(req, res, next) {
   try {
@@ -146,3 +146,4 @@ module.exports = {
   getHistory,
   getRecentActivity
 };
+

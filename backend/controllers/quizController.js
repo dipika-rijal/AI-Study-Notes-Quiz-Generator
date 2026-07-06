@@ -1,4 +1,4 @@
-const Quiz = require("../models/Quiz.cjs");
+﻿const Quiz = require("../models/Quiz.js");
 
 async function getQuizzes(req, res, next) {
   try {
@@ -70,3 +70,4 @@ module.exports = {
   updateQuiz,
   deleteQuiz
 };
+

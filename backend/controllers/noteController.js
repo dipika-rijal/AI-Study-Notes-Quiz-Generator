@@ -1,4 +1,4 @@
-const Note = require("../models/Note.cjs");
+﻿const Note = require("../models/Note.js");
 
 async function getNotes(req, res, next) {
   try {
@@ -70,3 +70,4 @@ module.exports = {
   updateNote,
   deleteNote
 };
+

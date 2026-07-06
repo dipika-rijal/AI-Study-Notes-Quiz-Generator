@@ -7,7 +7,7 @@ const {
   createQuiz,
   updateQuiz,
   deleteQuiz
-} = require("../controllers/quizController.cjs");
+} = require("../controllers/quizController.js");
 
 router.get("/", getQuizzes);
 router.get("/:id", getQuizById);
@@ -16,3 +16,4 @@ router.put("/:id", updateQuiz);
 router.delete("/:id", deleteQuiz);
 
 module.exports = router;
+

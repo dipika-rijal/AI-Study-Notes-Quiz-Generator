@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+﻿const mongoose = require("mongoose");
 const dns = require("dns");
 
 // Force Node.js to use reliable DNS servers for MongoDB SRV lookup
