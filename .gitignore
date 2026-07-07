@@ -53,3 +53,5 @@ frontend/dist/
 *.bak
 
 frontend/src/config/localGroqKey.js
+
+frontend/src/config/localGroqKey.js
