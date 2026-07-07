@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function History() {
@@ -7,6 +7,7 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const navigate = useNavigate();
 
@@ -135,6 +136,25 @@ export default function History() {
 
   const items = data?.items || [];
 
+  // Filter items based on active tab and search term (case-insensitive)
+  const filteredItems = items.filter(item => {
+    // Tab filter
+    const matchesTab =
+      activeTab === 'all' ||
+      (activeTab === 'notes' && item.type === 'note') ||
+      (activeTab === 'quizzes' && (item.type === 'quiz' || item.historyKind === 'saved-quiz'));
+    if (!matchesTab) return false;
+    // Search filter
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const title = (item.title || '').toLowerCase();
+    const desc = (item.description || item.subtitle || '').toLowerCase();
+    const category = (item.category || '').toLowerCase();
+    const content = (item.content || '').toLowerCase();
+    const topic = (item.topic || '').toLowerCase();
+    return title.includes(term) || desc.includes(term) || category.includes(term) || content.includes(term) || topic.includes(term);
+  });
+
   const primaryButton = {
     height: "42px",
     minWidth: "92px",
@@ -228,6 +248,24 @@ export default function History() {
           ))}
         </div>
 
+        {/* Search bar */}
+        <div style={{ marginBottom: "16px" }}>
+          <input
+            type="text"
+            placeholder="Search history..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "12px",
+              border: "1px solid #eadcff",
+              background: "#fafafa",
+              fontSize: "16px",
+            }}
+          />
+        </div>
+
         <div style={{ background: "white", border: "1px solid #eadcff", borderRadius: "28px", padding: "22px" }}>
           {loading && <p style={{ color: "#7c3cff", fontWeight: "800" }}>Loading history...</p>}
 
@@ -237,17 +275,25 @@ export default function History() {
             </div>
           )}
 
-          {!loading && items.length === 0 && (
-            <div style={{ textAlign: "center", padding: "70px 20px", color: "#9b8caf", fontWeight: "700" }}>
-              <div style={{ fontSize: "42px", marginBottom: "16px" }}>🗂️</div>
-              <h2 style={{ color: "#25145f" }}>No saved study materials yet.</h2>
-              <p>Create a note or quiz and save it to see it here.</p>
-            </div>
+          {!loading && (
+            searchTerm && filteredItems.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "70px 20px", color: "#9b8caf", fontWeight: "700" }}>
+                <div style={{ fontSize: "42px", marginBottom: "16px" }}>🔎</div>
+                <h2 style={{ color: "#25145f" }}>No matching history found.</h2>
+                <p>Try adjusting your search or filters.</p>
+              </div>
+            ) : (!searchTerm && items.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "70px 20px", color: "#9b8caf", fontWeight: "700" }}>
+                <div style={{ fontSize: "42px", marginBottom: "16px" }}>🗂️</div>
+                <h2 style={{ color: "#25145f" }}>No saved study materials yet.</h2>
+                <p>Create a note or quiz and save it to see it here.</p>
+              </div>
+            ) : null)
           )}
 
-          {!loading && items.length > 0 && (
+          {!loading && filteredItems.length > 0 && (
             <div style={{ display: "grid", gap: "14px" }}>
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const itemBusy = actionLoadingId === item.id;
 
                 return (
