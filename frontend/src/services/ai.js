@@ -1,15 +1,75 @@
-﻿import Groq from "groq-sdk";
+import Groq from "groq-sdk";
 import { GROQ_API_KEY } from "../config/localGroqKey";
 
 const MODEL = "llama-3.1-8b-instant";
+const PLACEHOLDER_GROQ_API_KEY = "PASTE_YOUR_GROQ_API_KEY_HERE";
+
+function getConfiguredGroqApiKey() {
+  return import.meta.env.VITE_GROQ_API_KEY || GROQ_API_KEY;
+}
+
+function isDevelopment() {
+  return import.meta.env.DEV;
+}
+
+function logGroqRequest(label, payload) {
+  if (!isDevelopment()) return;
+  console.info(`[Groq:${label}] request payload`, payload);
+}
+
+function logGroqResponse(label, response) {
+  if (!isDevelopment()) return;
+  console.info(`[Groq:${label}] response`, response);
+}
+
+function createGroqError(error) {
+  const status = error?.status || error?.response?.status;
+  const statusText = error?.statusText || error?.response?.statusText || "";
+  const groqMessage = error?.error?.message || error?.message || "Groq request failed.";
+  const message = status
+    ? `Groq API returned ${status}${statusText ? ` ${statusText}` : ""}.`
+    : groqMessage;
+
+  const wrapped = new Error(message);
+  wrapped.name = "GroqRequestError";
+  wrapped.status = status;
+  wrapped.groqMessage = groqMessage;
+  wrapped.cause = error;
+  return wrapped;
+}
+
+function logGroqError(label, payload, error) {
+  if (!isDevelopment()) return;
+  console.error(`[Groq:${label}] request payload`, payload);
+  console.error(`[Groq:${label}] complete error object`, error);
+  console.error(`[Groq:${label}] HTTP status`, error?.status || error?.response?.status || "unknown");
+  console.error(`[Groq:${label}] response`, error?.response || error?.error || "No response object available");
+  console.error(`[Groq:${label}] stack trace`, error?.stack || "No stack trace available");
+}
+
+async function createGroqCompletion(label, payload) {
+  const groq = getGroqClient();
+  logGroqRequest(label, payload);
+
+  try {
+    const response = await groq.chat.completions.create(payload);
+    logGroqResponse(label, response);
+    return response;
+  } catch (error) {
+    logGroqError(label, payload, error);
+    throw createGroqError(error);
+  }
+}
 
 function getGroqClient() {
-  if (!GROQ_API_KEY) {
-    throw new Error("Groq API key is missing from localGroqKey.js");
+  const apiKey = getConfiguredGroqApiKey();
+
+  if (!apiKey || apiKey === PLACEHOLDER_GROQ_API_KEY) {
+    throw new Error("Groq API key is missing. Set VITE_GROQ_API_KEY in your frontend environment or update localGroqKey.js.");
   }
 
   return new Groq({
-    apiKey: GROQ_API_KEY,
+    apiKey,
     dangerouslyAllowBrowser: true,
   });
 }
@@ -48,11 +108,9 @@ function cleanArray(value) {
 }
 
 export async function generateNotesWithAI(input, inputType) {
-  const groq = getGroqClient();
-
   const isVideo = inputType.toLowerCase().includes("video");
 
-  const response = await groq.chat.completions.create({
+  const response = await createGroqCompletion("generateNotesWithAI", {
     model: MODEL,
     temperature: 0.35,
     max_completion_tokens: 900,
@@ -117,11 +175,9 @@ ${isVideo ? "Important: For video link mode, focus on the video title/topic/deta
 }
 
 export async function generateQuizWithAI(input, inputType, questionCount) {
-  const groq = getGroqClient();
-
   const safeCount = Math.min(Math.max(Number(questionCount) || 5, 1), 20);
 
-  const response = await groq.chat.completions.create({
+  const response = await createGroqCompletion("generateQuizWithAI", {
     model: MODEL,
     temperature: 0.3,
     max_completion_tokens: 1800,
@@ -201,3 +257,42 @@ Rules:
 
   return questions.slice(0, safeCount);
 }
+
+/**
+ * Streams a chat completion response from Groq.
+ * Yields chunks of text as they arrive.
+ * 
+ * @param {Array<object>} messages - Message list in the format [{ role, content }].
+ * @returns {AsyncGenerator<string>} Async generator yielding text chunks.
+ */
+export async function* streamAIChatResponse(messages) {
+  const payload = {
+    model: MODEL,
+    messages: messages,
+    temperature: 0.4,
+    stream: true,
+  };
+  const responseStream = await createGroqCompletion("streamAIChatResponse", payload);
+
+  for await (const chunk of responseStream) {
+    const text = chunk.choices[0]?.delta?.content || "";
+    yield text;
+  }
+}
+
+/**
+ * Generates a complete chat completion from Groq (non-streaming).
+ * 
+ * @param {Array<object>} messages - Message list in the format [{ role, content }].
+ * @returns {Promise<string>} Full content string returned by the AI.
+ */
+export async function generateChatCompletion(messages) {
+  const response = await createGroqCompletion("generateChatCompletion", {
+    model: MODEL,
+    messages: messages,
+    temperature: 0.3,
+  });
+
+  return response.choices[0]?.message?.content || "";
+}
+

@@ -1,4 +1,4 @@
-﻿const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 const optionSchema = new mongoose.Schema(
   {
@@ -23,13 +23,27 @@ const optionSchema = new mongoose.Schema(
 
 const questionSchema = new mongoose.Schema(
   {
+    question: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     questionText: {
       type: String,
       required: true,
       trim: true,
     },
+    correctAnswer: {
+      type: String,
+      enum: ["A", "B", "C", "D", ""],
+      default: "",
+    },
+    explanation: {
+      type: mongoose.Schema.Types.Mixed,
+      default: "",
+    },
     options: {
-      type: [optionSchema],
+      type: [mongoose.Schema.Types.Mixed],
       required: true,
       validate: {
         validator: function (options) {
@@ -55,13 +69,26 @@ const quizSchema = new mongoose.Schema(
     },
     difficulty: {
       type: String,
-      enum: ["easy", "medium", "hard"],
+      enum: ["easy", "medium", "hard", "mixed"],
       default: "medium",
     },
     sourceType: {
       type: String,
-      enum: ["manual", "note", "pasted-content", "ai-generated"],
+      enum: ["manual", "note", "notes", "pasted-content", "ai-generated", "topic", "pdf"],
       default: "manual",
+    },
+    userId: {
+      type: String,
+      default: "anonymous",
+      trim: true,
+    },
+    totalQuestions: {
+      type: Number,
+      default: 0,
+    },
+    score: {
+      type: Number,
+      default: 0,
     },
     questions: {
       type: [questionSchema],
@@ -72,6 +99,10 @@ const quizSchema = new mongoose.Schema(
 );
 
 quizSchema.pre("validate", function () {
+  if (!this.totalQuestions && Array.isArray(this.questions)) {
+    this.totalQuestions = this.questions.length;
+  }
+
   for (const question of this.questions) {
     const correctCount = question.options.filter(function (option) {
       return option.isCorrect;

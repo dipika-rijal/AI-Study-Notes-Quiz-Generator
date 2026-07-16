@@ -1,6 +1,7 @@
-﻿const Note = require("../models/Note.js");
+const Note = require("../models/Note.js");
 const Quiz = require("../models/Quiz.js");
 const QuizAttempt = require("../models/QuizAttempt.js");
+const Conversation = require("../models/Conversation.js");
 
 async function getHistory(req, res, next) {
   try {
@@ -9,6 +10,7 @@ async function getHistory(req, res, next) {
     const notes = await Note.find().sort({ updatedAt: -1 }).lean();
     const quizzes = await Quiz.find().sort({ createdAt: -1 }).lean();
     const attempts = await QuizAttempt.find().sort({ createdAt: -1 }).lean();
+    const conversations = await Conversation.find().sort({ updatedAt: -1 }).lean();
 
     const noteItems = notes.map(function (note) {
       return {
@@ -50,7 +52,37 @@ async function getHistory(req, res, next) {
         scoreText: attempt.score + "/" + attempt.totalQuestions,
         questionCount: attempt.totalQuestions,
         createdAt: attempt.createdAt,
-        updatedAt: attempt.updatedAt
+        updatedAt: attempt.updatedAt,
+        status: attempt.status || "completed",
+        results: attempt.feedback || [],
+        quizId: attempt.quizId ? String(attempt.quizId) : null
+      };
+    });
+
+    const conversationItems = conversations.map(function (conv) {
+      let preview = conv.topic || "Conversation";
+      if (conv.messages && conv.messages.length > 0) {
+        const lastMsg = conv.messages[conv.messages.length - 1];
+        if (lastMsg.type === "text") {
+          preview = lastMsg.content.substring(0, 100) + (lastMsg.content.length > 100 ? "..." : "");
+        } else if (lastMsg.type === "quiz") {
+          preview = "Quiz generated.";
+        } else if (lastMsg.type === "notes") {
+          preview = "Notes generated.";
+        }
+      }
+
+      return {
+        id: String(conv._id),
+        type: "conversation",
+        historyKind: "chat",
+        title: conv.title || "Study Session",
+        subtitle: conv.topic || "Chat Session",
+        description: preview,
+        scoreText: null,
+        questionCount: null,
+        createdAt: conv.createdAt,
+        updatedAt: conv.updatedAt
       };
     });
 
@@ -60,22 +92,27 @@ async function getHistory(req, res, next) {
       items = noteItems;
     } else if (filter === "quizzes") {
       items = quizItems.concat(attemptItems);
+    } else if (filter === "conversations") {
+      items = conversationItems;
     } else {
-      items = noteItems.concat(quizItems).concat(attemptItems);
+      items = noteItems.concat(quizItems).concat(attemptItems).concat(conversationItems);
     }
 
     items.sort(function (a, b) {
-      return new Date(b.createdAt || b.updatedAt) - new Date(a.createdAt || a.updatedAt);
+      const dateA = new Date(a.updatedAt || a.createdAt);
+      const dateB = new Date(b.updatedAt || b.createdAt);
+      return dateB - dateA;
     });
 
     res.status(200).json({
       success: true,
       counts: {
-        all: noteItems.length + quizItems.length + attemptItems.length,
+        all: noteItems.length + quizItems.length + attemptItems.length + conversationItems.length,
         notes: noteItems.length,
         quizzes: quizItems.length + attemptItems.length,
         savedQuizzes: quizItems.length,
-        quizAttempts: attemptItems.length
+        quizAttempts: attemptItems.length,
+        conversations: conversationItems.length
       },
       items: items
     });
@@ -125,7 +162,10 @@ async function getRecentActivity(req, res, next) {
         title: attempt.topic,
         subtitle: attempt.score + "/" + attempt.totalQuestions,
         createdAt: attempt.createdAt,
-        updatedAt: attempt.updatedAt
+        updatedAt: attempt.updatedAt,
+        status: attempt.status || "completed",
+        results: attempt.feedback || [],
+        quizId: attempt.quizId ? String(attempt.quizId) : null
       });
     });
 

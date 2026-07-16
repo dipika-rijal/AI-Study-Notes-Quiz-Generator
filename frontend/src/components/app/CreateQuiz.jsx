@@ -1,629 +1,788 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { generateQuizWithAI } from "../../services/ai";
+import pdfToText from "react-pdftotext";
+import QuizReview from "./QuizReview";
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000"
+).replace(/\/api\/?$/, "");
+
+const SOURCE_OPTIONS = [
+  { value: "topic", label: "Enter a topic" },
+  { value: "pdf", label: "Upload PDF/document" },
+  { value: "notes", label: "Use previous generated notes/history" }
+];
+
+const QUESTION_COUNT_OPTIONS = [5, 10, 15, 20];
+const DIFFICULTY_OPTIONS = ["Easy", "Medium", "Hard", "Mixed"];
+const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+function createMessage(role, content, extra = {}) {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    role,
+    content,
+    ...extra
+  };
+}
+
+function normalizeApiQuiz(result) {
+  const questions = Array.isArray(result.questions) ? result.questions : [];
+
+  return {
+    quizId: result.quizId || "",
+    questions: questions.map((item, index) => ({
+      id: `${result.quizId || "quiz"}-${index}`,
+      question: item.question || `Question ${index + 1}`,
+      options: Array.isArray(item.options) ? item.options.slice(0, 4) : [],
+      correctAnswer: item.correctAnswer || "A",
+      explanation: item.explanation || { correct: "", wrong: {} }
+    }))
+  };
+}
+
+function normalizeSavedQuiz(savedQuiz) {
+  return {
+    quizId: savedQuiz._id,
+    questions: savedQuiz.questions.map((question, index) => {
+      const correctIndex = question.options.findIndex((option) => option.isCorrect);
+      const correctLetter = OPTION_LETTERS[correctIndex >= 0 ? correctIndex : 0];
+
+      return {
+        id: `${savedQuiz._id}-${index}`,
+        question: question.question || question.questionText,
+        options: question.options.map((option) => option.text),
+        correctAnswer: question.correctAnswer || correctLetter,
+        explanation: question.explanation || {
+          correct: question.options[correctIndex]?.explanation || "This is the correct answer.",
+          wrong: {
+            A: question.options[0]?.explanation || "",
+            B: question.options[1]?.explanation || "",
+            C: question.options[2]?.explanation || "",
+            D: question.options[3]?.explanation || ""
+          }
+        }
+      };
+    })
+  };
+}
+
+function getWeakAreas(questions, answers, topic) {
+  const missed = questions.filter((_, index) => answers[index]?.correct === false);
+
+  if (!missed.length) return ["No major weak areas detected"];
+
+  const candidates = missed
+    .map((question) => {
+      const words = question.question
+        .replace(/[^\w\s]/g, " ")
+        .split(/\s+/)
+        .filter((word) => word.length > 4)
+        .slice(0, 3);
+      return words.join(" ");
+    })
+    .filter(Boolean);
+
+  return [...new Set(candidates)].slice(0, 4).concat(candidates.length ? [] : [topic]);
+}
 
 export default function CreateQuiz() {
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  const [inputType, setInputType] = useState("topic");
-  const [questionCount, setQuestionCount] = useState(5);
-  const [input, setInput] = useState("");
-  const [uploadedFileName, setUploadedFileName] = useState("");
-  const [generatedQuiz, setGeneratedQuiz] = useState(null);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [messages, setMessages] = useState([
+    createMessage("assistant", "How would you like to create your quiz?", {
+      options: SOURCE_OPTIONS
+    })
+  ]);
+  const [step, setStep] = useState("chooseSource");
+  const [sourceType, setSourceType] = useState("");
+  const [topic, setTopic] = useState("");
+  const [content, setContent] = useState("");
+  const [questionCount, setQuestionCount] = useState(10);
+  const [difficulty, setDifficulty] = useState("medium");
+  const [historyItems, setHistoryItems] = useState([]);
+  const [quiz, setQuiz] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [saveStatus, setSaveStatus] = useState("empty");
-  const [savedQuizId, setSavedQuizId] = useState(null);
-
-  const tabs = [
-    {
-      id: "topic",
-      label: "Topic",
-      icon: "⌕",
-      placeholder: "e.g. Logistic Regression, React useState, Machine Learning...",
-    },
-    {
-      id: "content",
-      label: "Upload / Paste",
-      icon: "▤",
-      placeholder: "Paste your notes here or upload a .txt / .md file...",
-    },
-  ];
 
   useEffect(() => {
-    const typeFromUrl = searchParams.get("type");
-    const savedQuizIdFromUrl = searchParams.get("savedQuizId");
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, quiz, currentQuestionIndex, answers]);
 
-    if (savedQuizIdFromUrl) {
-      return;
-    }
-
-    if (typeFromUrl === "content") {
-      setInputType("content");
-      return;
-    }
-
-    setInputType("topic");
-  }, [searchParams]);
-
-  useEffect(() => {
-    const savedQuizIdFromUrl = searchParams.get("savedQuizId");
-
-    if (savedQuizIdFromUrl) {
-      loadSavedQuiz(savedQuizIdFromUrl);
-    }
-  }, [searchParams]);
-
-  const currentTab = tabs.find((tab) => tab.id === inputType);
-
-  function updateQuestionCount(value) {
-    const numberValue = Number(value);
-
-    if (Number.isNaN(numberValue)) {
-      setQuestionCount(1);
-      return;
-    }
-
-    if (numberValue < 1) {
-      setQuestionCount(1);
-      return;
-    }
-
-    if (numberValue > 20) {
-      setQuestionCount(20);
-      return;
-    }
-
-    setQuestionCount(numberValue);
+  function appendMessage(message) {
+    setMessages((previous) => [...previous, message]);
   }
 
-  function createFallbackExplanation(question, answer) {
-    return `This is correct because "${answer}" best matches what the question is asking about.`;
+  function askQuestionCount() {
+    setStep("chooseCount");
+    appendMessage(
+      createMessage("assistant", "How many questions would you like?", {
+        options: QUESTION_COUNT_OPTIONS.map((count) => ({
+          value: String(count),
+          label: String(count)
+        }))
+      })
+    );
   }
 
-  function normalizeQuiz(rawQuiz) {
-    return rawQuiz.map((item, index) => {
-      const options = Array.isArray(item.options) ? item.options : [];
-      const answer =
-        item.answer ||
-        item.correctAnswer ||
-        item.correct_answer ||
-        options[0] ||
-        "";
-
-      return {
-        id: `${Date.now()}-${index}`,
-        question: item.question || `Question ${index + 1}`,
-        options,
-        answer,
-        explanation:
-          item.explanation ||
-          item.reason ||
-          item.reasoning ||
-          createFallbackExplanation(item.question, answer),
-      };
-    });
+  function askDifficulty() {
+    setStep("chooseDifficulty");
+    appendMessage(
+      createMessage("assistant", "Choose a difficulty.", {
+        options: DIFFICULTY_OPTIONS.map((item) => ({
+          value: item.toLowerCase(),
+          label: item
+        }))
+      })
+    );
   }
 
-  function getFourOptions(item) {
-    let options = Array.isArray(item.options) ? item.options.filter(Boolean) : [];
-
-    if (item.answer && !options.includes(item.answer)) {
-      options = [item.answer, ...options];
-    }
-
-    options = [...new Set(options)].slice(0, 4);
-
-    while (options.length < 4) {
-      options.push(`Option ${options.length + 1}`);
-    }
-
-    return options;
-  }
-
-  function buildQuizPayload() {
-    return {
-      topic: input.trim().slice(0, 60) || "Untitled Quiz",
-      content: input.trim(),
-      difficulty: "medium",
-      sourceType: "ai-generated",
-      questions: generatedQuiz.map((item) => {
-        const options = getFourOptions(item);
-
-        return {
-          questionText: item.question,
-          options: options.map((option) => ({
-            text: option,
-            isCorrect: option === item.answer,
-            explanation:
-              item.explanation ||
-              `This is correct because "${item.answer}" best matches the question.`,
-          })),
-        };
-      }),
-    };
-  }
-
-  async function handleSaveQuiz() {
-    if (!generatedQuiz || generatedQuiz.length === 0) {
-      setErrorMessage("Generate a quiz first before saving.");
-      return;
-    }
+  async function loadHistoryNotes() {
+    setStep("loadingHistory");
+    setErrorMessage("");
+    appendMessage(createMessage("assistant", "Opening your saved study history..."));
 
     try {
-      setSaveStatus("saving");
-      setErrorMessage("");
-
-      const response = await fetch("http://localhost:5000/api/quizzes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(buildQuizPayload()),
-      });
-
-      if (!response.ok) {
-        throw new Error("Quiz could not be saved.");
-      }
-
+      const response = await fetch(`${API_BASE_URL}/api/history?type=notes`);
+      if (!response.ok) throw new Error("Could not load history.");
       const result = await response.json();
+      const noteItems = (result.items || []).filter((item) => item.type === "note").slice(0, 8);
 
-      setSavedQuizId(result.quiz?._id || null);
-      setSaveStatus("saved");
+      setHistoryItems(noteItems);
+      setStep("chooseHistory");
+      appendMessage(
+        createMessage(
+          "assistant",
+          noteItems.length
+            ? "Choose a saved note to create your quiz from."
+            : "I could not find saved notes in history. You can enter a topic or upload content instead.",
+          {
+            options: noteItems.map((item) => ({
+              value: item.id,
+              label: item.title
+            }))
+          }
+        )
+      );
     } catch (error) {
       console.error(error);
-      setSaveStatus("unsaved");
-      setErrorMessage("Quiz was not saved. Make sure backend is running.");
+      setErrorMessage(error.message || "Could not load history.");
+      setStep("chooseSource");
     }
   }
 
-  function convertSavedQuizToFrontend(savedQuiz) {
-    return savedQuiz.questions.map((question, index) => {
-      const correctOption = question.options.find((option) => option.isCorrect);
-
-      return {
-        id: `${savedQuiz._id}-${index}`,
-        question: question.questionText,
-        options: question.options.map((option) => option.text),
-        answer: correctOption?.text || "",
-        explanation:
-          correctOption?.explanation ||
-          "This is the correct answer based on the saved quiz.",
-      };
-    });
+  async function loadSavedNote(noteId) {
+    const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`);
+    if (!response.ok) throw new Error("Saved note could not be loaded.");
+    const result = await response.json();
+    return result.note;
   }
 
-  async function loadSavedQuiz(savedQuizIdFromUrl) {
+  const loadSavedQuiz = useCallback(async (savedQuizId) => {
+    setIsGenerating(true);
+    setErrorMessage("");
+
     try {
-      setIsGenerating(true);
-      setErrorMessage("");
-
-      const response = await fetch(
-        `http://localhost:5000/api/quizzes/${savedQuizIdFromUrl}`
-      );
-
+      const response = await fetch(`${API_BASE_URL}/api/quizzes/${savedQuizId}`);
       if (!response.ok) {
-        throw new Error("Saved quiz could not be loaded.");
+        if (response.status === 404) throw new Error("This quiz no longer exists.");
+        
+        let errorMessage = "Saved quiz could not be loaded.";
+        try {
+          const errorData = await response.json();
+          if (errorData?.message) errorMessage = errorData.message;
+        } catch (e) {
+          // ignore
+        }
+        throw new Error(errorMessage);
       }
-
       const result = await response.json();
       const savedQuiz = result.quiz;
 
-      const convertedQuiz = convertSavedQuizToFrontend(savedQuiz);
-
-      setInput(savedQuiz.topic || "");
-      setInputType("topic");
-      setQuestionCount(convertedQuiz.length || 5);
-      setGeneratedQuiz(convertedQuiz);
-      setSelectedAnswers({});
-      setSaveStatus("saved");
-      setSavedQuizId(savedQuiz._id);
+      setTopic(savedQuiz.topic || "Saved Quiz");
+      setSourceType(savedQuiz.sourceType || "notes");
+      setDifficulty(savedQuiz.difficulty || "medium");
+      setQuestionCount(savedQuiz.questions?.length || 5);
+      setQuiz(normalizeSavedQuiz(savedQuiz));
+      setCurrentQuestionIndex(0);
+      setAnswers({});
+      setStep("quiz");
+      setMessages([
+        createMessage("assistant", `Loaded saved quiz: ${savedQuiz.topic || "Saved Quiz"}`)
+      ]);
     } catch (error) {
       console.error(error);
-      setErrorMessage("Could not open saved quiz from history.");
+      setErrorMessage(error.message || "Could not load saved quiz.");
     } finally {
       setIsGenerating(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const savedQuizId = searchParams.get("savedQuizId");
+    if (savedQuizId) {
+      const timeoutId = window.setTimeout(() => {
+        loadSavedQuiz(savedQuizId);
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+  }, [searchParams, loadSavedQuiz]);
+
+  async function handleSourceSelect(value) {
+    setSourceType(value);
+    appendMessage(createMessage("user", SOURCE_OPTIONS.find((item) => item.value === value)?.label || value));
+
+    if (value === "topic") {
+      setStep("waitingForTopic");
+      appendMessage(createMessage("assistant", "What topic should the quiz cover?"));
+    } else if (value === "pdf") {
+      setStep("waitingForUpload");
+      appendMessage(createMessage("assistant", "Upload a PDF, text, or Markdown document for the quiz."));
+    } else if (value === "notes") {
+      await loadHistoryNotes();
+    }
   }
 
-  async function handleFileUpload(event) {
-    const file = event.target.files?.[0];
+  async function handleHistorySelect(noteId) {
+    const item = historyItems.find((historyItem) => historyItem.id === noteId);
+    appendMessage(createMessage("user", item?.title || "Saved note"));
+    setErrorMessage("");
 
+    try {
+      const note = await loadSavedNote(noteId);
+      const noteContent = note.body || note.summary || note.sourceText || "";
+      setTopic(note.title || "Saved Notes Quiz");
+      setContent(noteContent);
+      setSourceType("notes");
+      askQuestionCount();
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error.message || "Could not load that saved note.");
+    }
+  }
+
+  async function handleFileChange(event) {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ["text/plain", "text/markdown"];
-    const allowedExtensions = [".txt", ".md"];
-    const fileName = file.name.toLowerCase();
-
-    const hasAllowedType = allowedTypes.includes(file.type);
-    const hasAllowedExtension = allowedExtensions.some((ext) =>
-      fileName.endsWith(ext)
-    );
-
-    if (!hasAllowedType && !hasAllowedExtension) {
-      setErrorMessage("Please upload only .txt or .md files for now.");
-      return;
-    }
-
-    if (file.size > 700000) {
-      setErrorMessage("File is too large. Please upload a file under 700KB.");
-      return;
-    }
+    setErrorMessage("");
+    appendMessage(createMessage("user", `Uploaded ${file.name}`));
 
     try {
-      const text = await file.text();
+      let text = "";
+      const lowerName = file.name.toLowerCase();
 
-      setInputType("content");
-      setInput(text);
-      setUploadedFileName(file.name);
-      setErrorMessage("");
-      setSaveStatus("empty");
-      setSavedQuizId(null);
+      if (lowerName.endsWith(".pdf")) {
+        text = await pdfToText(file);
+        if (!text || !text.trim()) {
+          throw new Error("This PDF appears scanned or image-based. OCR/text extraction is required before quiz generation.");
+        }
+      } else if (lowerName.endsWith(".txt") || lowerName.endsWith(".md")) {
+        text = await file.text();
+      } else {
+        throw new Error("Please upload a PDF, TXT, or Markdown document.");
+      }
+
+      setTopic(file.name.replace(/\.[^.]+$/, ""));
+      setContent(text);
+      setSourceType(lowerName.endsWith(".pdf") ? "pdf" : "notes");
+      askQuestionCount();
     } catch (error) {
-      setErrorMessage("Could not read the uploaded file. Try another file.");
+      console.error(error);
+      setErrorMessage(error.message || "Could not read the uploaded document.");
+      appendMessage(createMessage("assistant", error.message || "Could not read that document."));
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
-  async function handleGenerateQuiz() {
-    if (!input.trim()) {
-      setErrorMessage("Please enter a topic, paste content, or upload a file first.");
+  function handleTextSubmit(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const value = String(formData.get("message") || "").trim();
+    event.currentTarget.reset();
+
+    if (!value) return;
+
+    if (step === "waitingForTopic") {
+      appendMessage(createMessage("user", value));
+      setTopic(value);
+      setContent(value);
+      askQuestionCount();
+    }
+  }
+
+  async function handleOptionSelect(value) {
+    if (step === "chooseSource") {
+      await handleSourceSelect(value);
       return;
     }
 
-    if (questionCount < 1 || questionCount > 20) {
-      setErrorMessage("Please choose between 1 and 20 questions.");
+    if (step === "chooseHistory") {
+      await handleHistorySelect(value);
       return;
     }
 
+    if (step === "chooseCount") {
+      const count = Number(value);
+      setQuestionCount(count);
+      appendMessage(createMessage("user", String(count)));
+      askDifficulty();
+      return;
+    }
+
+    if (step === "chooseDifficulty") {
+      setDifficulty(value);
+      appendMessage(createMessage("user", DIFFICULTY_OPTIONS.find((item) => item.toLowerCase() === value) || value));
+      await generateQuiz(value);
+    }
+  }
+
+  async function generateQuiz(selectedDifficulty = difficulty) {
     setIsGenerating(true);
     setErrorMessage("");
-    setGeneratedQuiz(null);
-    setSelectedAnswers({});
-    setSaveStatus("empty");
-    setSavedQuizId(null);
+    setQuiz(null);
+    setAnswers({});
+    setCurrentQuestionIndex(0);
+    setStep("generating");
+    appendMessage(createMessage("assistant", "Generating your quiz..."));
 
     try {
-      const quiz = await generateQuizWithAI(
-        input,
-        currentTab.label,
-        questionCount
-      );
+      const response = await fetch(`${API_BASE_URL}/api/quiz/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          sourceType,
+          content,
+          numberOfQuestions: questionCount,
+          difficulty: selectedDifficulty
+        })
+      });
 
-      if (!Array.isArray(quiz) || quiz.length === 0) {
-        throw new Error("AI did not return valid quiz questions.");
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || "Quiz generation failed.");
       }
 
-      const cleanQuiz = normalizeQuiz(quiz);
+      const normalizedQuiz = normalizeApiQuiz(result);
+      if (!normalizedQuiz.questions.length) {
+        throw new Error("Quiz generation returned no questions.");
+      }
 
-      setGeneratedQuiz(cleanQuiz);
-      setSaveStatus("unsaved");
-      setSavedQuizId(null);
+      setQuiz(normalizedQuiz);
+      setStep("quiz");
+      appendMessage(createMessage("assistant", "Quiz ready. Answer one question at a time."));
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error.message ||
-          "AI could not generate quiz right now. Please try again."
-      );
+      setErrorMessage(error.message || "Quiz generation failed.");
+      appendMessage(createMessage("assistant", error.message || "Quiz generation failed."));
+      setStep("chooseSource");
     } finally {
       setIsGenerating(false);
     }
   }
 
-  function handleSelectAnswer(questionIndex, option) {
-    setSelectedAnswers((previousAnswers) => ({
-      ...previousAnswers,
-      [questionIndex]: option,
-    }));
-  }
+  async function checkAnswer(selectedAnswer) {
+    if (!quiz || answers[currentQuestionIndex]) return;
 
-  function handleClear() {
-    setInput("");
-    setQuestionCount(5);
-    setUploadedFileName("");
-    setGeneratedQuiz(null);
-    setSelectedAnswers({});
-    setErrorMessage("");
-    setSaveStatus("empty");
-    setSavedQuizId(null);
+    setIsChecking(true);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/quiz/check-answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizId: quiz.quizId,
+          questionIndex: currentQuestionIndex,
+          selectedAnswer
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Answer check failed.");
+
+      setAnswers((previous) => ({
+        ...previous,
+        [currentQuestionIndex]: {
+          selectedAnswer,
+          correct: result.correct,
+          correctAnswer: result.correctAnswer,
+          explanation: result.explanation,
+          nextQuestion: result.nextQuestion
+        }
+      }));
+    } catch (error) {
+      console.error(error);
+      const question = quiz.questions[currentQuestionIndex];
+      setAnswers((previous) => ({
+        ...previous,
+        [currentQuestionIndex]: {
+          selectedAnswer,
+          correct: selectedAnswer === question.correctAnswer,
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          nextQuestion: currentQuestionIndex < quiz.questions.length - 1
+        }
+      }));
+    } finally {
+      setIsChecking(false);
     }
   }
 
+  function goToPreviousQuestion() {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex((index) => index - 1);
+    }
+  }
+
+  async function saveAttempt(status) {
+    if (!quiz?.quizId) return;
+
+    try {
+      const selectedAnswers = Object.entries(answers).map(([index, ans]) => ({
+        questionId: quiz.questions[index].id,
+        selectedOptionIndex: OPTION_LETTERS.indexOf(ans.selectedAnswer)
+      }));
+
+      await fetch(`${API_BASE_URL}/api/quiz-attempts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizId: quiz.quizId,
+          selectedAnswers,
+          status
+        })
+      });
+    } catch (error) {
+      console.error("Could not save quiz attempt", error);
+    }
+  }
+
+  async function handleQuit() {
+    if (Object.keys(answers).length === 0) {
+      restartQuiz();
+      return;
+    }
+    const saveInProgress = window.confirm("Do you want to save this quiz attempt as 'In Progress'?");
+    if (saveInProgress) {
+      await saveAttempt("in_progress");
+    }
+    restartQuiz();
+  }
+
+  function goToNextQuestion() {
+    if (!quiz) return;
+    if (currentQuestionIndex < quiz.questions.length - 1) {
+      setCurrentQuestionIndex((index) => index + 1);
+    } else {
+      saveFinalScore();
+      saveAttempt("completed");
+      setStep("completed");
+    }
+  }
+
+  async function saveFinalScore() {
+    if (!quiz?.quizId) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/api/quizzes/${quiz.quizId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          score: correctCount,
+          totalQuestions
+        })
+      });
+    } catch (error) {
+      console.error("Could not save quiz score", error);
+    }
+  }
+
+  function restartQuiz() {
+    setMessages([
+      createMessage("assistant", "How would you like to create your quiz?", {
+        options: SOURCE_OPTIONS
+      })
+    ]);
+    setStep("chooseSource");
+    setSourceType("");
+    setTopic("");
+    setContent("");
+    setQuestionCount(10);
+    setDifficulty("medium");
+    setHistoryItems([]);
+    setQuiz(null);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setErrorMessage("");
+  }
+
+  const currentQuestion = quiz?.questions[currentQuestionIndex];
+  const currentAnswer = answers[currentQuestionIndex];
+  const answeredCount = Object.keys(answers).length;
+  const correctCount = Object.values(answers).filter((answer) => answer.correct).length;
+  const wrongCount = answeredCount - correctCount;
+  const totalQuestions = quiz?.questions.length || 0;
+  const accuracy = totalQuestions ? Math.round((correctCount / totalQuestions) * 100) : 0;
+  const weakAreas = quiz ? getWeakAreas(quiz.questions, answers, topic) : [];
+
   return (
-    <div>
-      <div className="mb-6 flex items-center gap-4">
-        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#fff0d0] text-2xl text-orange-500 shadow-md shadow-orange-100">
-          ◎
-        </div>
-
-        <div>
-          <h1 className="text-4xl font-black tracking-[-0.05em] text-[#15132b]">
-            Create Quiz
-          </h1>
-
-          <p className="mt-1 font-semibold text-[#9a93b3]">
-            Generate real AI quiz questions from a topic or study content.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <section className="rounded-[32px] border border-orange-100 bg-white/85 p-6 shadow-xl shadow-orange-100/60">
-          <h2 className="mb-5 text-lg font-black text-[#15132b]">
-            What should the quiz cover?
-          </h2>
-
-          <div className="mb-5 grid grid-cols-2 rounded-2xl bg-[#f3eee8] p-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setInputType(tab.id)}
-                className={`rounded-xl px-3 py-3 text-xs font-black transition ${
-                  inputType === tab.id
-                    ? "bg-white text-orange-500 shadow-md"
-                    : "text-[#9a93b3] hover:text-[#15132b]"
-                }`}
-              >
-                <span className="mr-1">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
+    <div className="flex h-[calc(100vh-4rem)] flex-col bg-transparent">
+      <header className="mb-4 flex items-center justify-between border-b border-orange-100/60 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff0d0] text-xl text-orange-500 shadow-md shadow-orange-100">
+            Q
           </div>
-
-          {inputType === "content" && (
-            <div className="mb-4 rounded-3xl border border-orange-100 bg-[#fffaf3] p-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".txt,.md,text/plain,text/markdown"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-2xl bg-[#fff0d0] px-5 py-3 text-sm font-black text-orange-500 transition hover:-translate-y-0.5"
-              >
-                📁 Upload text file
-              </button>
-
-              <p className="mt-3 text-xs font-bold text-[#9a93b3]">
-                Supported now: .txt and .md files. PDF/DOCX can be added later.
-              </p>
-
-              {uploadedFileName && (
-                <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm font-black text-emerald-700">
-                  Uploaded: {uploadedFileName}
-                </p>
-              )}
-            </div>
-          )}
-
-          <textarea
-            value={input}
-            onChange={(event) => {
-              setInput(event.target.value);
-              setSaveStatus("empty");
-              setSavedQuizId(null);
-            }}
-            placeholder={currentTab.placeholder}
-            className="min-h-[170px] w-full resize-none rounded-3xl border border-transparent bg-[#f3eee8] px-5 py-4 font-semibold leading-7 text-[#15132b] outline-none transition placeholder:text-[#b7adc4] focus:border-orange-400 focus:bg-white"
-          />
-
-          <label className="mt-5 block text-sm font-black text-[#8a83a5]">
-            Number of questions
-          </label>
-
-          <div className="mt-4 rounded-3xl border border-orange-100 bg-[#fffaf3] p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-black text-[#15132b]">
-                  Choose quiz amount
-                </p>
-                <p className="mt-1 text-xs font-bold text-[#9a93b3]">
-                  Minimum 1, maximum 20 questions.
-                </p>
-              </div>
-
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={questionCount}
-                onChange={(event) => updateQuestionCount(event.target.value)}
-                disabled={isGenerating}
-                className="w-24 rounded-2xl border border-orange-100 bg-white px-4 py-3 text-center font-black text-orange-500 outline-none focus:border-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-
-            <input
-              type="range"
-              min="1"
-              max="20"
-              value={questionCount}
-              onChange={(event) => updateQuestionCount(event.target.value)}
-              disabled={isGenerating}
-              className="mt-4 w-full accent-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-
-          {errorMessage && (
-            <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-500">
-              {errorMessage}
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-[#15132b]">
+              Interactive AI Quiz
+            </h1>
+            <p className="text-xs font-semibold text-[#9a93b3]">
+              Create, answer, review, and save quiz practice.
             </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={restartQuiz}
+          className="rounded-xl border border-orange-100 bg-white px-4 py-2 text-xs font-black text-[#8a83a5] shadow-sm transition hover:bg-[#fff5ec]"
+        >
+          Start Over
+        </button>
+      </header>
+
+      <main className="mb-4 flex-1 overflow-y-auto rounded-[32px] border border-orange-100 bg-white/70 p-5 shadow-xl shadow-orange-100/40">
+        <div className="mx-auto max-w-[900px] space-y-5">
+          {messages.map((message) => {
+            const isUser = message.role === "user";
+            return (
+              <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 text-sm font-semibold leading-relaxed shadow-sm ${
+                  isUser
+                    ? "rounded-tr-sm bg-orange-500 text-white"
+                    : "rounded-tl-sm border border-orange-50 bg-white text-[#15132b]"
+                }`}>
+                  <p className="whitespace-pre-line">{message.content}</p>
+                  {message.options?.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {message.options.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleOptionSelect(option.value)}
+                          disabled={isGenerating || isChecking}
+                          className="rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-xs font-black text-orange-500 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-[#fff5ec] disabled:opacity-50"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {step === "waitingForUpload" && (
+            <div className="flex justify-start">
+              <div className="rounded-3xl border border-orange-100 bg-white p-4 shadow-sm">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt,.md,text/plain,text/markdown"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-2xl bg-[#fff0d0] px-5 py-3 text-sm font-black text-orange-500 transition hover:-translate-y-0.5"
+                >
+                  Upload document
+                </button>
+              </div>
+            </div>
           )}
 
-          <div className="mt-5 flex gap-3">
-            <button
-              onClick={handleGenerateQuiz}
-              disabled={!input.trim() || isGenerating}
-              className="flex-1 rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-4 font-black text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isGenerating
-                ? `Generating ${questionCount} questions...`
-                : `✨ Generate ${questionCount} Questions`}
-            </button>
-
-            <button
-              onClick={handleClear}
-              disabled={isGenerating}
-              className="rounded-2xl border border-orange-100 bg-white px-5 py-4 font-black text-[#8a83a5] transition hover:bg-[#fff5ec] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Clear
-            </button>
-          </div>
-        </section>
-
-        <section className="overflow-hidden rounded-[32px] border border-orange-100 bg-white/85 shadow-xl shadow-orange-100/60">
-          <div className="flex items-center justify-between border-b border-orange-100 px-6 py-5">
-            <h2 className="text-lg font-black text-[#15132b]">
-              Generated Quiz
-            </h2>
-
-            {generatedQuiz && (
-              <span className="rounded-full bg-[#fff0d0] px-4 py-2 text-xs font-black text-orange-500">
-                {generatedQuiz.length} Questions
-              </span>
-            )}
-          </div>
-
-          <div className="min-h-[455px] p-6">
-            {isGenerating ? (
-              <div className="flex min-h-[390px] flex-col items-center justify-center text-center">
-                <div className="mb-4 grid h-16 w-16 animate-pulse place-items-center rounded-3xl bg-[#fff0d0] text-3xl text-orange-500">
-                  ✨
-                </div>
-
-                <h3 className="font-black text-orange-500">
-                  Loading quiz...
-                </h3>
-
-                <p className="mt-2 max-w-sm text-sm leading-6 text-[#b0a8c2]">
-                  Generating or opening your quiz.
-                </p>
-              </div>
-            ) : !generatedQuiz ? (
-              <div className="flex min-h-[390px] flex-col items-center justify-center text-center">
-                <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-[#fff0d0] text-3xl text-orange-500">
-                  ◎
-                </div>
-
-                <h3 className="font-black text-[#8a83a5]">
-                  Your AI quiz will appear here
-                </h3>
-
-                <p className="mt-2 max-w-sm text-sm leading-6 text-[#b0a8c2]">
-                  Choose question count, enter topic/content, and generate quiz.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex flex-col gap-3 rounded-3xl border border-orange-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-black text-[#15132b]">
-                      Save status
-                    </p>
-
-                    <p className="mt-1 text-sm font-bold text-[#9a93b3]">
-                      {saveStatus === "unsaved" && "Not saved yet"}
-                      {saveStatus === "saving" && "Saving quiz..."}
-                      {saveStatus === "saved" &&
-                        (savedQuizId ? "Saved to History ✅" : "Saved ✅")}
-                      {saveStatus === "empty" && "Generate a quiz first"}
-                    </p>
+          {step === "quiz" && currentQuestion && (
+            <section className="rounded-3xl border border-orange-100 bg-white p-5 shadow-sm shadow-orange-50">
+              <div className="mb-4 flex flex-col gap-3 border-b border-orange-50 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-orange-500">
+                    Question {currentQuestionIndex + 1}/{totalQuestions}
+                  </p>
+                  <div className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-orange-50">
+                    <div
+                      className="h-full rounded-full bg-orange-400 transition-all"
+                      style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
+                    />
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveQuiz}
-                    disabled={saveStatus === "saving" || saveStatus === "saved"}
-                    className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {saveStatus === "saved" ? "Saved ✅" : "Save Quiz"}
-                  </button>
                 </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs font-black">
+                  <span className="rounded-xl bg-[#fffaf3] px-3 py-2 text-[#8a83a5]">
+                    {answeredCount}/{totalQuestions}
+                  </span>
+                  <span className="rounded-xl bg-emerald-50 px-3 py-2 text-emerald-700">
+                    {correctCount} correct
+                  </span>
+                  <span className="rounded-xl bg-red-50 px-3 py-2 text-red-600">
+                    {wrongCount} wrong
+                  </span>
+                </div>
+              </div>
 
-                {generatedQuiz.map((item, index) => {
-                  const selectedAnswer = selectedAnswers[index];
-                  const hasSelected = Boolean(selectedAnswer);
-                  const isCorrect = selectedAnswer === item.answer;
+              <h2 className="mb-4 text-lg font-black leading-7 text-[#15132b]">
+                {currentQuestion.question}
+              </h2>
+
+              <div className="grid gap-3">
+                {currentQuestion.options.map((option, index) => {
+                  const letter = OPTION_LETTERS[index];
+                  const selected = currentAnswer?.selectedAnswer === letter;
+                  const correct = currentAnswer?.correctAnswer === letter;
+
+                  let style = "border-orange-100 bg-white text-[#15132b] hover:bg-[#fff5ec] hover:border-orange-300";
+                  if (currentAnswer && correct) style = "border-emerald-200 bg-emerald-50 text-emerald-800";
+                  if (currentAnswer && selected && !correct) style = "border-red-200 bg-red-50 text-red-700";
+                  if (currentAnswer && !selected && !correct) style = "border-orange-50 bg-white text-[#9a93b3] opacity-70";
 
                   return (
-                    <div
-                      key={item.id || `${item.question}-${index}`}
-                      className="rounded-3xl border border-orange-100 bg-[#fffaf3] p-5"
+                    <button
+                      key={letter}
+                      type="button"
+                      onClick={() => checkAnswer(letter)}
+                      disabled={Boolean(currentAnswer) || isChecking}
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${style}`}
                     >
-                      <h3 className="mb-4 font-black leading-7 text-[#15132b]">
-                        {index + 1}. {item.question}
-                      </h3>
-
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {item.options.map((option) => {
-                          const isSelected = selectedAnswer === option;
-                          const isRightAnswer = option === item.answer;
-
-                          let optionStyle = "bg-white text-[#77718f] hover:bg-[#fff0d0]";
-
-                          if (hasSelected && isRightAnswer) {
-                            optionStyle = "bg-[#edfff6] text-emerald-700";
-                          }
-
-                          if (hasSelected && isSelected && !isRightAnswer) {
-                            optionStyle = "bg-red-50 text-red-500";
-                          }
-
-                          return (
-                            <button
-                              type="button"
-                              key={option}
-                              onClick={() => handleSelectAnswer(index, option)}
-                              className={`rounded-2xl px-4 py-3 text-left text-sm font-semibold transition ${optionStyle}`}
-                            >
-                              {option}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {!hasSelected ? (
-                        <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-[#9a93b3]">
-                          Click one option to check your answer.
-                        </p>
-                      ) : (
-                        <div className="mt-4 space-y-3">
-                          <p
-                            className={`rounded-2xl px-4 py-3 text-sm font-black ${
-                              isCorrect
-                                ? "bg-[#edfff6] text-emerald-700"
-                                : "bg-red-50 text-red-500"
-                            }`}
-                          >
-                            {isCorrect
-                              ? "Correct ✅"
-                              : `Wrong ❌ Correct answer: ${item.answer}`}
-                          </p>
-
-                          <p className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#655d80]">
-                            <span className="font-black text-[#15132b]">
-                              Why?
-                            </span>{" "}
-                            {item.explanation}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                      <span className="mr-2 font-black">{letter}.</span>
+                      {option}
+                    </button>
                   );
                 })}
               </div>
-            )}
-          </div>
-        </section>
-      </div>
+
+              {currentAnswer && (
+                <div className="mt-5 rounded-3xl border border-orange-100 bg-[#fffaf3] p-5">
+                  <p className={`text-sm font-black ${currentAnswer.correct ? "text-emerald-700" : "text-red-600"}`}>
+                    {currentAnswer.correct ? "Correct Answer:" : "Incorrect. Correct Answer:"} {currentAnswer.correctAnswer}
+                  </p>
+                  <p className="mt-3 text-sm font-bold text-[#15132b]">
+                    Your answer:
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-[#655d80]">
+                    {currentAnswer.selectedAnswer}. {currentQuestion.options[OPTION_LETTERS.indexOf(currentAnswer.selectedAnswer)]}
+                  </p>
+
+                  <div className="mt-4 space-y-3 text-sm leading-6">
+                    <div>
+                      <p className="font-black text-[#15132b]">Why this is correct:</p>
+                      <p className="font-semibold text-[#655d80]">{currentAnswer.explanation?.correct}</p>
+                    </div>
+
+                    <div>
+                      <p className="font-black text-[#15132b]">Why other answers are wrong:</p>
+                      <div className="mt-2 space-y-2">
+                        {OPTION_LETTERS.filter((letter) => letter !== currentAnswer.correctAnswer).map((letter) => (
+                          <p key={letter} className="font-semibold text-[#655d80]">
+                            <span className="font-black text-red-500">{letter}</span> {currentAnswer.explanation?.wrong?.[letter] || "This option does not match the source content."}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex justify-between">
+                    {currentQuestionIndex > 0 ? (
+                      <button
+                        type="button"
+                        onClick={goToPreviousQuestion}
+                        className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-gray-50"
+                      >
+                        Previous
+                      </button>
+                    ) : <div></div>}
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleQuit}
+                        className="rounded-2xl border border-red-100 bg-white px-5 py-3 text-sm font-black text-red-500 shadow-sm transition hover:-translate-y-0.5 hover:bg-red-50"
+                      >
+                        Quit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToNextQuestion}
+                        className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 transition hover:-translate-y-0.5"
+                      >
+                        {currentQuestionIndex < totalQuestions - 1 ? "Next Question" : "Finish Quiz"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {step === "completed" && quiz && quiz.questions && (
+            <QuizReview
+              quiz={quiz}
+              answers={answers}
+              score={correctCount}
+              totalQuestions={totalQuestions}
+              onRetry={() => {
+                setAnswers({});
+                setCurrentQuestionIndex(0);
+                setStep("quiz");
+              }}
+            />
+          )}
+
+          {isGenerating && (
+            <div className="flex justify-start">
+              <div className="rounded-3xl border border-orange-50 bg-white px-5 py-3.5 text-sm font-black text-orange-500 shadow-sm">
+                Generating quiz...
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
+
+      {errorMessage && (
+        <p className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+          {errorMessage}
+        </p>
+      )}
+
+      <footer className="mx-auto w-full max-w-[920px]">
+        <form onSubmit={handleTextSubmit} className="relative flex items-end gap-2 rounded-[28px] border border-orange-100 bg-[#f3eee8] p-2 focus-within:border-orange-400 focus-within:bg-white">
+          <textarea
+            name="message"
+            disabled={step !== "waitingForTopic" || isGenerating}
+            placeholder={step === "waitingForTopic" ? "Enter a quiz topic..." : "Use the choices above to continue..."}
+            rows={1}
+            className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm font-semibold leading-relaxed text-[#15132b] outline-none placeholder:text-[#b7adc4] disabled:cursor-not-allowed"
+          />
+          <button
+            type="submit"
+            disabled={step !== "waitingForTopic" || isGenerating}
+            className="h-11 rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 text-sm font-black text-white shadow-md shadow-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Send
+          </button>
+        </form>
+      </footer>
     </div>
   );
 }

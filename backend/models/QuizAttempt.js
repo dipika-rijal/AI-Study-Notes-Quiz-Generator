@@ -1,4 +1,4 @@
-﻿const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 const quizAttemptSchema = new mongoose.Schema(
   {
@@ -34,6 +34,11 @@ const quizAttemptSchema = new mongoose.Schema(
     score: {
       type: Number,
       required: true
+    },
+    status: {
+      type: String,
+      enum: ["in_progress", "completed"],
+      default: "completed"
     }
   },
   { timestamps: true }
