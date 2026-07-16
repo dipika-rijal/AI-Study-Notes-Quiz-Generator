@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
@@ -8,6 +8,7 @@ const noteRoutes = require("./routes/noteRoutes.js");
 const quizRoutes = require("./routes/quizRoutes.js");
 const quizAttemptRoutes = require("./routes/quizAttemptRoutes.js");
 const historyRoutes = require("./routes/historyRoutes.js");
+const conversationRoutes = require("./routes/conversationRoutes.js");
 
 const app = express();
 
@@ -25,9 +26,11 @@ app.get("/api/health", function (req, res) {
 });
 
 app.use("/api/notes", noteRoutes);
+app.use("/api/quiz", quizRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/quiz-attempts", quizAttemptRoutes);
 app.use("/api/history", historyRoutes);
+app.use("/api/conversations", conversationRoutes);
 
 app.use(function (req, res) {
   res.status(404).json({
