@@ -15,7 +15,7 @@ export default function FlashcardViewer({ data }) {
 
   if (cards.length === 0) {
     return (
-      <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100 text-amber-800 text-sm font-semibold">
+      <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 text-amber-800 dark:text-amber-400 text-sm font-semibold">
         No flashcards found in this response.
       </div>
     );
@@ -38,12 +38,12 @@ export default function FlashcardViewer({ data }) {
   const currentCard = cards[currentIndex];
 
   return (
-    <div className="w-full rounded-3xl border border-purple-100 bg-white p-5 shadow-sm shadow-purple-50 space-y-5 select-none">
-      <div className="flex items-center justify-between border-b border-purple-50 pb-3">
-        <span className="text-xs font-black uppercase tracking-widest text-[#6757ff]">
+    <div className="w-full rounded-3xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] p-5 shadow-sm dark:shadow-none shadow-purple-50 space-y-5 select-none">
+      <div className="flex items-center justify-between border-b border-purple-50 dark:border-[#424242] pb-3">
+        <span className="text-xs font-black uppercase tracking-widest text-[#6757ff] dark:text-[#10a37f]">
           🧠 Flashcards
         </span>
-        <span className="text-xs font-semibold text-[#8a83a5]">
+        <span className="text-xs font-semibold text-[#8a83a5] dark:text-[#b4b4b4]">
           Card {currentIndex + 1} of {cards.length}
         </span>
       </div>
@@ -56,17 +56,17 @@ export default function FlashcardViewer({ data }) {
           }`}
         >
           {/* Front Face */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-purple-100 bg-[#fffdf9] p-6 text-center backface-hidden shadow-inner hover:shadow-md transition">
-            <span className="text-[10px] uppercase font-black tracking-widest text-[#9a93b3] mb-3">Front (Click to flip)</span>
-            <h3 className="text-base font-black text-[#15132b] leading-relaxed max-w-sm">
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-purple-100 dark:border-[#424242] bg-[#fffdf9] dark:bg-[#2f2f2f] p-6 text-center backface-hidden shadow-inner dark:shadow-none hover:shadow-md dark:hover:shadow-none transition">
+            <span className="text-[10px] uppercase font-black tracking-widest text-[#9a93b3] dark:text-[#999999] mb-3">Front (Click to flip)</span>
+            <h3 className="text-base font-black text-[#15132b] dark:text-[#ececec] leading-relaxed max-w-sm">
               {currentCard.front}
             </h3>
           </div>
 
           {/* Back Face */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50/20 p-6 text-center backface-hidden rotate-y-180 shadow-inner">
-            <span className="text-[10px] uppercase font-black tracking-widest text-emerald-600 mb-3">Back</span>
-            <p className="text-sm font-semibold text-[#504975] leading-relaxed max-w-sm">
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/20 dark:bg-emerald-900/20 p-6 text-center backface-hidden rotate-y-180 shadow-inner dark:shadow-none">
+            <span className="text-[10px] uppercase font-black tracking-widest text-emerald-600 dark:text-emerald-400 mb-3">Back</span>
+            <p className="text-sm font-semibold text-[#504975] dark:text-[#ececec] leading-relaxed max-w-sm">
               {currentCard.back}
             </p>
           </div>
@@ -79,12 +79,12 @@ export default function FlashcardViewer({ data }) {
           type="button"
           onClick={handlePrev}
           aria-label="Previous card"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f3eee8] hover:bg-[#eeeaff] text-[#6757ff] font-bold active:scale-95 transition cursor-pointer"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f3eee8] dark:bg-[#2f2f2f] hover:bg-[#eeeaff] dark:hover:bg-[#424242] text-[#6757ff] dark:text-[#10a37f] font-bold active:scale-95 transition cursor-pointer"
         >
           ←
         </button>
 
-        <span className="text-2xs font-extrabold text-[#9a93b3]">
+        <span className="text-2xs font-extrabold text-[#9a93b3] dark:text-[#999999]">
           Click card to flip
         </span>
 
@@ -92,7 +92,7 @@ export default function FlashcardViewer({ data }) {
           type="button"
           onClick={handleNext}
           aria-label="Next card"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f3eee8] hover:bg-[#eeeaff] text-[#6757ff] font-bold active:scale-95 transition cursor-pointer"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f3eee8] dark:bg-[#2f2f2f] hover:bg-[#eeeaff] dark:hover:bg-[#424242] text-[#6757ff] dark:text-[#10a37f] font-bold active:scale-95 transition cursor-pointer"
         >
           →
         </button>

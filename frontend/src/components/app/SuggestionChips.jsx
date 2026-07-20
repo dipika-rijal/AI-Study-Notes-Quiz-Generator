@@ -22,8 +22,8 @@ function SuggestionChips({ options = [], onSelect, disabled = false }) {
           className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-black transition border
             ${
               disabled
-                ? "bg-purple-50/50 border-purple-100 text-purple-300 cursor-not-allowed"
-                : "bg-white border-purple-100 text-[#6757ff] hover:bg-[#eeeaff] hover:border-[#6757ff] active:scale-95 hover:-translate-y-0.5 shadow-sm shadow-purple-50 hover:shadow-purple-100 cursor-pointer"
+                ? "bg-purple-50/50 dark:bg-[#171717] border-purple-100 dark:border-[#424242] text-purple-300 dark:text-gray-600 cursor-not-allowed"
+                : "bg-white dark:bg-[#2f2f2f] border-purple-100 dark:border-[#424242] text-[#6757ff] dark:text-[#10a37f] hover:bg-[#eeeaff] dark:hover:bg-[#171717] hover:border-[#6757ff] dark:hover:border-[#10a37f] active:scale-95 hover:-translate-y-0.5 shadow-sm dark:shadow-none shadow-purple-50 dark:hover:shadow-none hover:shadow-purple-100 cursor-pointer"
             }`}
         >
           {option.icon && <span className="text-sm leading-none">{option.icon}</span>}

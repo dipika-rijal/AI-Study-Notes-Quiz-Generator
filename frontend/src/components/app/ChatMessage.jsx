@@ -45,7 +45,7 @@ export default function ChatMessage({
     >
       {/* AI Avatar */}
       {!isUser && (
-        <div className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-xl bg-gradient-to-br from-[#6757ff] to-[#9a7cff] text-base text-white shadow-md shadow-purple-200">
+        <div className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-xl bg-gradient-to-br from-[#6757ff] to-[#9a7cff] dark:from-[#10a37f] dark:to-[#05503e] text-base text-white shadow-md shadow-purple-200 dark:shadow-none">
           ✦
         </div>
       )}
@@ -53,7 +53,7 @@ export default function ChatMessage({
       {/* Bubble Wrapper */}
       <div className={`flex flex-col max-w-[85%] md:max-w-[75%] ${isUser ? "items-end" : "items-start"}`}>
         {/* Username/Label header */}
-        <span className="text-[10px] font-extrabold text-[#9a93b3] mb-1 select-none">
+        <span className="text-[10px] font-extrabold text-[#9a93b3] dark:text-[#999999] mb-1 select-none">
           {isUser ? "You" : "StudyGen Assistant"}
         </span>
 
@@ -86,11 +86,11 @@ export default function ChatMessage({
           </Suspense>
         ) : (
           <div
-            className={`rounded-3xl px-5 py-3.5 shadow-sm leading-relaxed text-sm font-semibold select-text
+            className={`rounded-3xl px-5 py-3.5 shadow-sm dark:shadow-none leading-relaxed text-sm font-semibold select-text
               ${
                 isUser
-                  ? "bg-[#6757ff] text-white rounded-tr-sm"
-                  : "bg-white border border-purple-50 text-[#15132b] rounded-tl-sm"
+                  ? "bg-[#6757ff] dark:bg-[#10a37f] text-white rounded-tr-sm"
+                  : "bg-white dark:bg-[#171717] border border-purple-50 dark:border-[#424242] text-[#15132b] dark:text-[#ececec] rounded-tl-sm"
               }`}
           >
             {type === "loading" ? (

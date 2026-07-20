@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./config/firebase";
@@ -25,9 +25,9 @@ import GuestRoute from "./components/routes/GuestRoute";
 
 function LandingPage({ setModalType, setAuthMode }) {
   return (
-    <div className="min-h-screen overflow-hidden bg-[#fffaf3] text-[#15132b]">
-      <div className="pointer-events-none fixed -left-32 top-20 h-96 w-96 rounded-full bg-[#ffd8b6]/50 blur-3xl" />
-      <div className="pointer-events-none fixed -right-40 top-24 h-[420px] w-[420px] rounded-full bg-[#6757ff]/10 blur-3xl" />
+    <div className="min-h-screen overflow-hidden">
+      <div className="pointer-events-none fixed -left-32 top-20 h-96 w-96 rounded-full bg-[#10a37f]/20 blur-3xl" />
+      <div className="pointer-events-none fixed -right-40 top-24 h-[420px] w-[420px] rounded-full bg-[#10a37f]/10 blur-3xl" />
 
       <Navbar openModal={setModalType} openAuthModal={setAuthMode} />
 
@@ -64,12 +64,12 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[#fffaf3] text-[#15132b]">
-        <div className="rounded-3xl border border-purple-100 bg-white px-8 py-6 text-center shadow-xl shadow-purple-100">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#6757ff] to-[#9a7cff] text-white">
+      <div className="grid min-h-screen place-items-center">
+        <div className="surface-card px-8 py-6 text-center">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#10a37f] to-[#05503e] text-white">
             ✦
           </div>
-          <p className="font-black text-[#6757ff]">Loading StudyGen AI...</p>
+          <p className="font-black text-[var(--theme-glow-purple)]">Loading StudyGen AI...</p>
         </div>
       </div>
     );

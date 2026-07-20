@@ -169,17 +169,17 @@ export default function NotesCard({
   };
 
   return (
-    <div className="w-full rounded-3xl border border-purple-100 bg-white p-5 shadow-sm shadow-purple-50">
+    <div className="w-full rounded-3xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] p-5 shadow-sm dark:shadow-none shadow-purple-50">
       {/* Category header */}
-      <div className="flex items-center justify-between border-b border-purple-50 pb-3 mb-4">
-        <span className="text-xs font-black uppercase tracking-widest text-[#6757ff]">
+      <div className="flex items-center justify-between border-b border-purple-50 dark:border-[#424242] pb-3 mb-4">
+        <span className="text-xs font-black uppercase tracking-widest text-[#6757ff] dark:text-[#10a37f]">
           📚 {category || "AI Notes"}
         </span>
 
         {/* Action badges */}
         <div className="flex gap-2">
           {saveStatus === "saved" && (
-            <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 text-2xs font-extrabold text-emerald-600 shadow-sm shadow-emerald-50 animate-fade-in">
+            <span className="rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-2.5 py-0.5 text-2xs font-extrabold text-emerald-600 dark:text-emerald-400 shadow-sm dark:shadow-none shadow-emerald-50 animate-fade-in">
               Saved to History ✓
             </span>
           )}
@@ -192,7 +192,7 @@ export default function NotesCard({
       </div>
 
       {/* Action panel */}
-      <div className="flex flex-wrap gap-2.5 border-t border-purple-50 pt-4 mt-5 select-none">
+      <div className="flex flex-wrap gap-2.5 border-t border-purple-50 dark:border-[#424242] pt-4 mt-5 select-none">
         <button
           type="button"
           onClick={handleSave}
@@ -200,10 +200,10 @@ export default function NotesCard({
           className={`px-4 py-2 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 flex items-center gap-1.5 cursor-pointer shadow-sm
             ${
               saveStatus === "saved"
-                ? "bg-emerald-50 border border-emerald-100 text-emerald-700 cursor-default hover:translate-y-0 active:scale-100"
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 cursor-default hover:translate-y-0 active:scale-100"
                 : saveStatus === "saving"
-                ? "bg-purple-50 border border-purple-100 text-purple-400 cursor-wait hover:translate-y-0 active:scale-100"
-                : "bg-[#6757ff] border border-transparent text-white hover:bg-[#5444e6] hover:shadow-md"
+                ? "bg-purple-50 dark:bg-[#2f2f2f] border border-purple-100 dark:border-[#424242] text-purple-400 dark:text-[#b4b4b4] cursor-wait hover:translate-y-0 active:scale-100"
+                : "bg-[#6757ff] dark:bg-[#10a37f] border border-transparent text-white hover:bg-[#5444e6] dark:hover:bg-[#05503e] hover:shadow-md dark:hover:shadow-none"
             }`}
         >
           {saveStatus === "saved" ? "Saved ✓" : saveStatus === "saving" ? "Saving..." : "💾 Save to History"}
@@ -212,7 +212,7 @@ export default function NotesCard({
         <button
           type="button"
           onClick={handleDownloadPDF}
-          className="bg-white border border-purple-100 hover:border-[#6757ff] text-[#6757ff] hover:bg-[#fcfaff] px-4 py-2 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 shadow-sm hover:shadow-md flex items-center gap-1.5 cursor-pointer"
+          className="bg-white dark:bg-[#2f2f2f] border border-purple-100 dark:border-[#424242] hover:border-[#6757ff] dark:hover:border-[#10a37f] text-[#6757ff] dark:text-[#10a37f] hover:bg-[#fcfaff] dark:hover:bg-[#171717] px-4 py-2 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none flex items-center gap-1.5 cursor-pointer"
         >
           📥 Download PDF
         </button>
@@ -222,7 +222,7 @@ export default function NotesCard({
           onClick={handleCopyMarkdown}
           aria-label="Copy notes as Markdown"
           title="Copy notes as Markdown"
-          className="bg-white border border-purple-100 hover:border-purple-200 text-[#8a83a5] hover:bg-slate-50 h-9 w-9 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 shadow-sm grid place-items-center cursor-pointer"
+          className="bg-white dark:bg-[#2f2f2f] border border-purple-100 dark:border-[#424242] hover:border-purple-200 dark:hover:border-gray-500 text-[#8a83a5] dark:text-[#b4b4b4] hover:bg-slate-50 dark:hover:bg-[#171717] h-9 w-9 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 shadow-sm dark:shadow-none grid place-items-center cursor-pointer"
         >
           📋
         </button>
@@ -231,7 +231,7 @@ export default function NotesCard({
           type="button"
           onClick={onRegenerate}
           disabled={isGenerating}
-          className="bg-white border border-purple-100 hover:border-purple-200 text-[#8a83a5] hover:bg-slate-50 px-4 py-2 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
+          className="bg-white dark:bg-[#2f2f2f] border border-purple-100 dark:border-[#424242] hover:border-purple-200 dark:hover:border-gray-500 text-[#8a83a5] dark:text-[#b4b4b4] hover:bg-slate-50 dark:hover:bg-[#171717] px-4 py-2 rounded-xl text-xs font-black transition active:scale-95 hover:-translate-y-0.5 shadow-sm dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer"
         >
           🔄 Regenerate
         </button>
