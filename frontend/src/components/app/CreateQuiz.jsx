@@ -537,16 +537,16 @@ export default function CreateQuiz() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col bg-transparent">
-      <header className="mb-4 flex items-center justify-between border-b border-orange-100/60 pb-4">
+      <header className="mb-4 flex items-center justify-between border-b border-orange-100/60 dark:border-[#424242] pb-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff0d0] text-xl text-orange-500 shadow-md shadow-orange-100">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff0d0] dark:bg-[#171717] dark:border dark:border-[#424242] text-xl text-orange-500 dark:text-[#10a37f] shadow-md shadow-orange-100 dark:shadow-none">
             Q
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#15132b]">
+            <h1 className="text-xl font-black tracking-tight text-[#15132b] dark:text-[#ececec]">
               Interactive AI Quiz
             </h1>
-            <p className="text-xs font-semibold text-[#9a93b3]">
+            <p className="text-xs font-semibold text-[#9a93b3] dark:text-[#999999]">
               Create, answer, review, and save quiz practice.
             </p>
           </div>
@@ -555,22 +555,22 @@ export default function CreateQuiz() {
         <button
           type="button"
           onClick={restartQuiz}
-          className="rounded-xl border border-orange-100 bg-white px-4 py-2 text-xs font-black text-[#8a83a5] shadow-sm transition hover:bg-[#fff5ec]"
+          className="rounded-xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] px-4 py-2 text-xs font-black text-[#8a83a5] dark:text-[#b4b4b4] shadow-sm dark:shadow-none transition hover:bg-[#fff5ec] dark:hover:bg-[#171717]"
         >
           Start Over
         </button>
       </header>
 
-      <main className="mb-4 flex-1 overflow-y-auto rounded-[32px] border border-orange-100 bg-white/70 p-5 shadow-xl shadow-orange-100/40">
+      <main className="mb-4 flex-1 overflow-y-auto rounded-[32px] border border-orange-100 dark:border-[#424242] bg-white/70 dark:bg-[#171717] p-5 shadow-xl shadow-orange-100/40 dark:shadow-none">
         <div className="mx-auto max-w-[900px] space-y-5">
           {messages.map((message) => {
             const isUser = message.role === "user";
             return (
               <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 text-sm font-semibold leading-relaxed shadow-sm ${
+                <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 text-sm font-semibold leading-relaxed shadow-sm dark:shadow-none ${
                   isUser
-                    ? "rounded-tr-sm bg-orange-500 text-white"
-                    : "rounded-tl-sm border border-orange-50 bg-white text-[#15132b]"
+                    ? "rounded-tr-sm bg-orange-500 dark:bg-[#10a37f] text-white"
+                    : "rounded-tl-sm border border-orange-50 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] text-[#15132b] dark:text-[#ececec]"
                 }`}>
                   <p className="whitespace-pre-line">{message.content}</p>
                   {message.options?.length > 0 && (
@@ -581,7 +581,7 @@ export default function CreateQuiz() {
                           type="button"
                           onClick={() => handleOptionSelect(option.value)}
                           disabled={isGenerating || isChecking}
-                          className="rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-xs font-black text-orange-500 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-[#fff5ec] disabled:opacity-50"
+                          className="rounded-2xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#171717] px-4 py-2.5 text-xs font-black text-orange-500 dark:text-[#10a37f] shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:border-orange-300 dark:hover:border-[#10a37f] hover:bg-[#fff5ec] dark:hover:bg-[#2f2f2f] disabled:opacity-50"
                         >
                           {option.label}
                         </button>
@@ -595,7 +595,7 @@ export default function CreateQuiz() {
 
           {step === "waitingForUpload" && (
             <div className="flex justify-start">
-              <div className="rounded-3xl border border-orange-100 bg-white p-4 shadow-sm">
+              <div className="rounded-3xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] p-4 shadow-sm dark:shadow-none">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -606,7 +606,7 @@ export default function CreateQuiz() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="rounded-2xl bg-[#fff0d0] px-5 py-3 text-sm font-black text-orange-500 transition hover:-translate-y-0.5"
+                  className="rounded-2xl bg-[#fff0d0] dark:bg-[#171717] dark:border dark:border-[#424242] px-5 py-3 text-sm font-black text-orange-500 dark:text-[#10a37f] transition hover:-translate-y-0.5"
                 >
                   Upload document
                 </button>
@@ -615,13 +615,13 @@ export default function CreateQuiz() {
           )}
 
           {step === "quiz" && currentQuestion && (
-            <section className="rounded-3xl border border-orange-100 bg-white p-5 shadow-sm shadow-orange-50">
-              <div className="mb-4 flex flex-col gap-3 border-b border-orange-50 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <section className="rounded-3xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] p-5 shadow-sm shadow-orange-50 dark:shadow-none">
+              <div className="mb-4 flex flex-col gap-3 border-b border-orange-50 dark:border-[#424242] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-widest text-orange-500">
+                  <p className="text-xs font-black uppercase tracking-widest text-orange-500 dark:text-[#10a37f]">
                     Question {currentQuestionIndex + 1}/{totalQuestions}
                   </p>
-                  <div className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-orange-50">
+                  <div className="mt-2 h-2 w-56 overflow-hidden rounded-full bg-orange-50 dark:bg-[#171717]">
                     <div
                       className="h-full rounded-full bg-orange-400 transition-all"
                       style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
@@ -629,19 +629,19 @@ export default function CreateQuiz() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs font-black">
-                  <span className="rounded-xl bg-[#fffaf3] px-3 py-2 text-[#8a83a5]">
+                  <span className="rounded-xl bg-[#fffaf3] dark:bg-[#171717] px-3 py-2 text-[#8a83a5] dark:text-[#b4b4b4]">
                     {answeredCount}/{totalQuestions}
                   </span>
-                  <span className="rounded-xl bg-emerald-50 px-3 py-2 text-emerald-700">
+                  <span className="rounded-xl bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 text-emerald-700 dark:text-emerald-400">
                     {correctCount} correct
                   </span>
-                  <span className="rounded-xl bg-red-50 px-3 py-2 text-red-600">
+                  <span className="rounded-xl bg-red-50 dark:bg-red-900/20 px-3 py-2 text-red-600 dark:text-red-400">
                     {wrongCount} wrong
                   </span>
                 </div>
               </div>
 
-              <h2 className="mb-4 text-lg font-black leading-7 text-[#15132b]">
+              <h2 className="mb-4 text-lg font-black leading-7 text-[#15132b] dark:text-[#ececec]">
                 {currentQuestion.question}
               </h2>
 
@@ -651,10 +651,10 @@ export default function CreateQuiz() {
                   const selected = currentAnswer?.selectedAnswer === letter;
                   const correct = currentAnswer?.correctAnswer === letter;
 
-                  let style = "border-orange-100 bg-white text-[#15132b] hover:bg-[#fff5ec] hover:border-orange-300";
-                  if (currentAnswer && correct) style = "border-emerald-200 bg-emerald-50 text-emerald-800";
-                  if (currentAnswer && selected && !correct) style = "border-red-200 bg-red-50 text-red-700";
-                  if (currentAnswer && !selected && !correct) style = "border-orange-50 bg-white text-[#9a93b3] opacity-70";
+                  let style = "border-orange-100 dark:border-[#424242] bg-white dark:bg-[#171717] text-[#15132b] dark:text-[#ececec] hover:bg-[#fff5ec] dark:hover:bg-[#2f2f2f] hover:border-orange-300 dark:hover:border-[#10a37f]";
+                  if (currentAnswer && correct) style = "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-400";
+                  if (currentAnswer && selected && !correct) style = "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400";
+                  if (currentAnswer && !selected && !correct) style = "border-orange-50 dark:border-[#424242] bg-white dark:bg-[#171717] text-[#9a93b3] dark:text-[#999999] opacity-70";
 
                   return (
                     <button
@@ -672,29 +672,29 @@ export default function CreateQuiz() {
               </div>
 
               {currentAnswer && (
-                <div className="mt-5 rounded-3xl border border-orange-100 bg-[#fffaf3] p-5">
-                  <p className={`text-sm font-black ${currentAnswer.correct ? "text-emerald-700" : "text-red-600"}`}>
+                <div className="mt-5 rounded-3xl border border-orange-100 dark:border-[#424242] bg-[#fffaf3] dark:bg-[#171717] p-5">
+                  <p className={`text-sm font-black ${currentAnswer.correct ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                     {currentAnswer.correct ? "Correct Answer:" : "Incorrect. Correct Answer:"} {currentAnswer.correctAnswer}
                   </p>
-                  <p className="mt-3 text-sm font-bold text-[#15132b]">
+                  <p className="mt-3 text-sm font-bold text-[#15132b] dark:text-[#ececec]">
                     Your answer:
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-[#655d80]">
+                  <p className="mt-1 text-sm font-semibold text-[#655d80] dark:text-[#b4b4b4]">
                     {currentAnswer.selectedAnswer}. {currentQuestion.options[OPTION_LETTERS.indexOf(currentAnswer.selectedAnswer)]}
                   </p>
 
                   <div className="mt-4 space-y-3 text-sm leading-6">
                     <div>
-                      <p className="font-black text-[#15132b]">Why this is correct:</p>
-                      <p className="font-semibold text-[#655d80]">{currentAnswer.explanation?.correct}</p>
+                      <p className="font-black text-[#15132b] dark:text-[#ececec]">Why this is correct:</p>
+                      <p className="font-semibold text-[#655d80] dark:text-[#b4b4b4]">{currentAnswer.explanation?.correct}</p>
                     </div>
 
                     <div>
-                      <p className="font-black text-[#15132b]">Why other answers are wrong:</p>
+                      <p className="font-black text-[#15132b] dark:text-[#ececec]">Why other answers are wrong:</p>
                       <div className="mt-2 space-y-2">
                         {OPTION_LETTERS.filter((letter) => letter !== currentAnswer.correctAnswer).map((letter) => (
-                          <p key={letter} className="font-semibold text-[#655d80]">
-                            <span className="font-black text-red-500">{letter}</span> {currentAnswer.explanation?.wrong?.[letter] || "This option does not match the source content."}
+                          <p key={letter} className="font-semibold text-[#655d80] dark:text-[#b4b4b4]">
+                            <span className="font-black text-red-500 dark:text-red-400">{letter}</span> {currentAnswer.explanation?.wrong?.[letter] || "This option does not match the source content."}
                           </p>
                         ))}
                       </div>
@@ -706,7 +706,7 @@ export default function CreateQuiz() {
                       <button
                         type="button"
                         onClick={goToPreviousQuestion}
-                        className="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-black text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-gray-50"
+                        className="rounded-2xl border border-gray-200 dark:border-[#424242] bg-white dark:bg-[#171717] px-5 py-3 text-sm font-black text-gray-600 dark:text-[#b4b4b4] shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-[#2f2f2f]"
                       >
                         Previous
                       </button>
@@ -715,14 +715,14 @@ export default function CreateQuiz() {
                       <button
                         type="button"
                         onClick={handleQuit}
-                        className="rounded-2xl border border-red-100 bg-white px-5 py-3 text-sm font-black text-red-500 shadow-sm transition hover:-translate-y-0.5 hover:bg-red-50"
+                        className="rounded-2xl border border-red-100 dark:border-red-900/50 bg-white dark:bg-[#171717] px-5 py-3 text-sm font-black text-red-500 dark:text-red-400 shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         Quit
                       </button>
                       <button
                         type="button"
                         onClick={goToNextQuestion}
-                        className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 transition hover:-translate-y-0.5"
+                        className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 dark:from-[#10a37f] dark:to-[#05503e] px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 dark:shadow-none transition hover:-translate-y-0.5"
                       >
                         {currentQuestionIndex < totalQuestions - 1 ? "Next Question" : "Finish Quiz"}
                       </button>
@@ -749,7 +749,7 @@ export default function CreateQuiz() {
 
           {isGenerating && (
             <div className="flex justify-start">
-              <div className="rounded-3xl border border-orange-50 bg-white px-5 py-3.5 text-sm font-black text-orange-500 shadow-sm">
+              <div className="rounded-3xl border border-orange-50 dark:border-[#10a37f]/50 bg-white dark:bg-[#171717] px-5 py-3.5 text-sm font-black text-orange-500 dark:text-[#10a37f] shadow-sm dark:shadow-none">
                 Generating quiz...
               </div>
             </div>
@@ -760,24 +760,24 @@ export default function CreateQuiz() {
       </main>
 
       {errorMessage && (
-        <p className="mb-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+        <p className="mb-4 rounded-2xl border border-red-100 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400">
           {errorMessage}
         </p>
       )}
 
       <footer className="mx-auto w-full max-w-[920px]">
-        <form onSubmit={handleTextSubmit} className="relative flex items-end gap-2 rounded-[28px] border border-orange-100 bg-[#f3eee8] p-2 focus-within:border-orange-400 focus-within:bg-white">
+        <form onSubmit={handleTextSubmit} className="relative flex items-end gap-2 rounded-[28px] border border-orange-100 dark:border-[#424242] bg-[#f3eee8] dark:bg-[#171717] p-2 focus-within:border-orange-400 dark:focus-within:border-[#10a37f] focus-within:bg-white dark:focus-within:bg-[#2f2f2f] transition shadow-inner dark:shadow-none">
           <textarea
             name="message"
             disabled={step !== "waitingForTopic" || isGenerating}
             placeholder={step === "waitingForTopic" ? "Enter a quiz topic..." : "Use the choices above to continue..."}
             rows={1}
-            className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm font-semibold leading-relaxed text-[#15132b] outline-none placeholder:text-[#b7adc4] disabled:cursor-not-allowed"
+            className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm font-semibold leading-relaxed text-[#15132b] dark:text-[#ececec] outline-none placeholder:text-[#b7adc4] dark:placeholder:text-[#999999] disabled:cursor-not-allowed"
           />
           <button
             type="submit"
             disabled={step !== "waitingForTopic" || isGenerating}
-            className="h-11 rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 text-sm font-black text-white shadow-md shadow-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 dark:from-[#10a37f] dark:to-[#05503e] px-5 text-sm font-black text-white shadow-md shadow-orange-100 dark:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
           >
             Send
           </button>
