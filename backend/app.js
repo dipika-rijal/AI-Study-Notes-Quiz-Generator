@@ -54,7 +54,7 @@ connectDB()
     });
   })
   .catch(function (error) {
-    console.error("Backend failed to start:", error.message);
+    console.error(error);
     process.exit(1);
   });
 

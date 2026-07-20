@@ -1,121 +1,158 @@
-﻿import { Link } from "react-router-dom";
+import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useStreak } from '../../hooks/useStreak';
+import { useScrollReveal, useParallax } from '../../hooks/useAnimations';
+import HeroWelcome from './HeroWelcome';
 
-export default function Home({ user }) {
-  const displayName =
-    user.displayName || user.email?.split("@")[0] || "Student";
+function AnimatedStatCard({ icon, label, value, color, delay = 0 }) {
+  const cardRef = useRef(null);
+  useParallax(cardRef, { intensity: 0.05, maxRotation: 3 });
 
-  const stats = [
-    {
-      label: "Notes Created",
-      value: 0,
-      icon: "▤",
-      color: "bg-[#eeeaff] text-[#6757ff]",
-    },
-    {
-      label: "Quizzes Created",
-      value: 0,
-      icon: "◎",
-      color: "bg-[#fff0d0] text-orange-500",
-    },
-    {
-      label: "Study Sessions",
-      value: 0,
-      icon: "◴",
-      color: "bg-[#d9f7e8] text-emerald-600",
-    },
-  ];
+  const colorMap = {
+    purple: { bg: 'rgba(139,92,246,0.15)', text: 'var(--theme-glow-purple)' },
+    cyan:   { bg: 'rgba(6,182,212,0.15)',  text: 'var(--theme-glow-cyan)' },
+    orange: { bg: 'rgba(245,158,11,0.15)', text: 'var(--theme-glow-orange)' },
+    pink:   { bg: 'rgba(236,72,153,0.15)', text: 'var(--theme-glow-pink)' },
+  };
+  const c = colorMap[color] || colorMap.purple;
 
   return (
-    <div>
-      <section className="relative overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_85%_20%,rgba(255,216,182,0.26),transparent_26%),linear-gradient(135deg,#6757ff,#9b4dff)] px-8 py-10 text-white shadow-2xl shadow-purple-200">
-        <div className="relative z-10">
-          <p className="mb-3 text-sm font-black text-white/80">✦ StudyGen AI</p>
-
-          <h1 className="text-4xl font-black tracking-[-0.05em] md:text-5xl">
-            Welcome back,{" "}
-            <span className="text-yellow-200">{displayName}!</span>
-          </h1>
-
-          <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-white/80">
-            What would you like to create today? Choose notes or quiz and start
-            your study session.
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, y: 30, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.6, ease: 'easeOut' }}
+      className="surface-card rounded-[20px] p-6 cursor-pointer"
+      style={{ transformStyle: 'preserve-3d' }}
+    >
+      <div className="flex items-center gap-4">
+        <div style={{ background: c.bg, borderRadius: '12px', padding: '12px' }}>
+          <span className="text-2xl">{icon}</span>
+        </div>
+        <div>
+          <p className="text-2xl font-black" style={{ color: 'var(--theme-text-primary)' }}>
+            {value}
+          </p>
+          <p className="text-sm font-medium" style={{ color: 'var(--theme-text-secondary)' }}>
+            {label}
           </p>
         </div>
+      </div>
+    </motion.div>
+  );
+}
 
-        <div className="absolute right-8 top-8 grid h-14 w-14 place-items-center rounded-3xl bg-white/15 text-2xl backdrop-blur">
-          📚
+function ActionCard({ icon, title, description, link, color, delay = 0 }) {
+  const cardRef = useRef(null);
+  useParallax(cardRef, { intensity: 0.06, maxRotation: 4 });
+
+  const colorMap = {
+    purple: { bg: 'rgba(139,92,246,0.15)', text: 'var(--theme-glow-purple)' },
+    cyan:   { bg: 'rgba(6,182,212,0.15)',  text: 'var(--theme-glow-cyan)' },
+    orange: { bg: 'rgba(245,158,11,0.15)', text: 'var(--theme-glow-orange)' },
+    pink:   { bg: 'rgba(236,72,153,0.15)', text: 'var(--theme-glow-pink)' },
+  };
+  const c = colorMap[color] || colorMap.purple;
+
+  return (
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.6, ease: 'easeOut' }}
+      className="surface-card rounded-[20px] p-6 group cursor-pointer"
+      style={{ transformStyle: 'preserve-3d' }}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          style={{
+            background: c.bg,
+            borderRadius: '12px',
+            padding: '12px',
+            transition: 'transform 0.3s ease',
+          }}
+          className="group-hover:scale-110"
+        >
+          <span className="text-2xl">{icon}</span>
         </div>
-
-        <div className="absolute bottom-8 right-16 grid h-12 w-12 place-items-center rounded-3xl bg-white/15 text-xl backdrop-blur">
-          ✨
-        </div>
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-3xl border border-purple-100 bg-white/85 p-6 shadow-lg shadow-purple-100/60"
-          >
-            <div className="flex items-center gap-4">
-              <div
-                className={`grid h-12 w-12 place-items-center rounded-2xl text-xl ${stat.color}`}
-              >
-                {stat.icon}
-              </div>
-
-              <div>
-                <p className="text-2xl font-black text-[#15132b]">
-                  {stat.value}
-                </p>
-                <p className="text-sm font-semibold text-[#9a93b3]">
-                  {stat.label}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <div className="rounded-[32px] border border-purple-100 bg-white/85 p-7 shadow-xl shadow-purple-100/70">
-          <div className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-[#eeeaff] text-2xl text-[#6757ff]">
-            ▤
-          </div>
-
-          <h2 className="text-2xl font-black text-[#15132b]">Create Notes</h2>
-
-          <p className="mt-3 leading-7 text-[#8a83a5]">
-            Turn a topic, pasted content, or video link into clean study notes.
+        <div className="flex-1">
+          <h3 className="text-lg font-bold" style={{ color: 'var(--theme-text-primary)' }}>
+            {title}
+          </h3>
+          <p className="mt-1 text-sm" style={{ color: 'var(--theme-text-secondary)' }}>
+            {description}
           </p>
-
           <Link
-            to="/app/notes?type=topic"
-            className="mt-7 block w-full rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] px-5 py-4 text-center font-black text-white shadow-lg shadow-purple-200 transition hover:-translate-y-0.5"
+            to={link}
+            style={{
+              display: 'inline-block',
+              marginTop: '14px',
+              padding: '8px 18px',
+              borderRadius: '10px',
+              background: c.bg,
+              color: c.text,
+              fontSize: '13px',
+              fontWeight: '700',
+              textDecoration: 'none',
+              transition: 'all 0.3s ease',
+            }}
           >
-            Create Notes →
+            Start →
           </Link>
         </div>
+      </div>
+    </motion.div>
+  );
+}
 
-        <div className="rounded-[32px] border border-orange-100 bg-white/85 p-7 shadow-xl shadow-orange-100/70">
-          <div className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-[#fff0d0] text-2xl text-orange-500">
-            ◎
-          </div>
+export default function Home({ user }) {
+  const { currentStreak, loading: streakLoading } = useStreak();
+  const [stats] = useState({ notesCount: 12, quizzesCount: 8 });
 
-          <h2 className="text-2xl font-black text-[#15132b]">Create Quiz</h2>
+  const heroRef = useRef(null);
+  const statsRef = useRef(null);
+  const actionsRef = useRef(null);
 
-          <p className="mt-3 leading-7 text-[#8a83a5]">
-            Generate simple practice questions from your own study material.
-          </p>
+  useScrollReveal(heroRef,   { delay: 0.1, duration: 0.8, y: 30 });
+  useScrollReveal(statsRef,  { delay: 0.15, duration: 0.7, y: 30, stagger: 0.1 });
+  useScrollReveal(actionsRef,{ delay: 0.2, duration: 0.8, y: 40, stagger: 0.1 });
 
-          <Link
-            to="/app/quiz?type=topic"
-            className="mt-7 block w-full rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-5 py-4 text-center font-black text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5"
-          >
-            Create Quiz →
-          </Link>
-        </div>
-      </section>
+  return (
+    <div className="space-y-8">
+      {/* Hero */}
+      <div ref={heroRef}>
+        <HeroWelcome
+          user={user}
+          streak={streakLoading ? 0 : currentStreak}
+          notesCount={stats.notesCount}
+          quizzesCount={stats.quizzesCount}
+        />
+      </div>
+
+      {/* Stats Row */}
+      <div ref={statsRef} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <AnimatedStatCard icon="📝" label="Notes Created"      value={stats.notesCount}                      color="purple" delay={0.1} />
+        <AnimatedStatCard icon="🧠" label="Quizzes Completed"  value={stats.quizzesCount}                    color="cyan"   delay={0.2} />
+        <AnimatedStatCard icon="🔥" label="Day Streak"         value={streakLoading ? 0 : currentStreak}    color="orange" delay={0.3} />
+      </div>
+
+      {/* Action Cards */}
+      <div ref={actionsRef} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <ActionCard icon="📚" title="Create Notes"  description="Turn any topic into organized study notes"       link="/app/notes?type=topic" color="purple" delay={0.1} />
+        <ActionCard icon="🎯" title="Create Quiz"   description="Test your knowledge with AI-generated questions" link="/app/quiz?type=topic"  color="cyan"   delay={0.2} />
+        <ActionCard icon="📊" title="View History"  description="Review all your saved notes and quizzes"         link="/app/history"          color="pink"   delay={0.3} />
+      </div>
+
+      {/* Ambient background blobs */}
+      <div className="fixed inset-0 -z-10 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full blur-3xl animate-pulse"
+             style={{ background: 'rgba(139,92,246,0.06)' }} />
+        <div className="absolute bottom-1/3 right-1/4 h-80 w-80 rounded-full blur-3xl animate-pulse"
+             style={{ background: 'rgba(6,182,212,0.05)', animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 h-96 w-96 rounded-full blur-3xl animate-pulse"
+             style={{ background: 'rgba(236,72,153,0.04)', animationDelay: '4s' }} />
+      </div>
     </div>
   );
 }
