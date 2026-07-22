@@ -3,6 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { useConversationFlow } from "../../hooks/useConversationFlow";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
+import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
+import AINeuralCore from "../ai/AINeuralCore";
 
 /**
  * Main Chat Container for the Conversational Note Assistant.
@@ -40,6 +43,24 @@ export default function ChatPage() {
     loadSavedNoteById
   });
 
+  const [showCore, setShowCore] = useState(false);
+  const [coreSuccess, setCoreSuccess] = useState(false);
+
+  useEffect(() => {
+    if (loadingState !== "none" && loadingState !== "generating") {
+      setShowCore(true);
+      setCoreSuccess(false);
+    } else if (showCore && loadingState === "none") {
+      // Finished loading, show success memory visualization
+      setCoreSuccess(true);
+      const timer = setTimeout(() => {
+        setShowCore(false);
+        setCoreSuccess(false);
+      }, 3000); // Wait 3 seconds to show knowledge added
+      return () => clearTimeout(timer);
+    }
+  }, [loadingState, showCore]);
+
   // Automatically scroll to the bottom of the message container on new updates
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,18 +73,18 @@ export default function ChatPage() {
   const isGenerating = conversationStep === "generating";
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-transparent">
+    <div className="flex h-[calc(100vh-3rem)] flex-col bg-transparent">
       {/* Chat header area */}
-      <header className="flex items-center justify-between border-b border-purple-100/50 dark:border-[#424242] pb-4 mb-4 select-none">
+      <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-4 select-none">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#eeeaff] dark:bg-[#171717] dark:border dark:border-[#424242] text-xl text-[#6757ff] dark:text-[#10a37f] shadow-md shadow-purple-50 dark:shadow-none">
+          <div className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-xl text-[var(--color-primary-600)]">
             ✦
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#15132b] dark:text-[#ececec]">
+            <h1 className="text-lg font-semibold tracking-[-0.025em] text-[var(--theme-text-primary)]">
               AI Study Assistant
             </h1>
-            <p className="text-xs font-semibold text-[#9a93b3] dark:text-[#999999]">
+            <p className="text-xs text-[var(--theme-text-secondary)]">
               Generate, summarize, quiz, or learn anything.
             </p>
           </div>
@@ -73,32 +94,25 @@ export default function ChatPage() {
           type="button"
           onClick={actions.resetChat}
           aria-label="Start a new chat session"
-          className="rounded-xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 hover:border-red-100 dark:hover:border-red-800/50 px-4 py-2 text-xs font-black text-[#8a83a5] dark:text-[#b4b4b4] transition active:scale-95 shadow-sm dark:shadow-none cursor-pointer"
+          className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
         >
           🗑 Start Over
         </button>
       </header>
 
-      {/* Action Loader Alert Panel */}
-      {loadingState !== "none" && loadingState !== "generating" && (
-        <div className="mb-4 flex items-center justify-center animate-pulse">
-          <div className="flex items-center gap-2 rounded-2xl bg-[#eeeaff] dark:bg-[#171717] border border-purple-100 dark:border-[#10a37f]/50 px-4 py-2 text-2xs font-extrabold text-[#6757ff] dark:text-[#10a37f] shadow-md shadow-purple-100/50 dark:shadow-none">
-            <span className="h-2 w-2 animate-ping rounded-full bg-[#6757ff] dark:bg-[#10a37f]" />
-            <span>
-              {loadingState === "thinking" && "Searching Note..."}
-              {loadingState === "uploading" && "Reading Document..."}
-              {loadingState === "extracting" && "Extracting PDF contents..."}
-              {loadingState === "saving" && "Saving to History database..."}
-              {loadingState === "downloading" && "Formatting print sheet..."}
-            </span>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showCore && (
+          <AINeuralCore
+            loadingState={loadingState === "none" ? "success" : loadingState}
+            isSuccess={coreSuccess}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Main Conversation viewport */}
       <main
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto rounded-[32px] border border-purple-100 dark:border-[#424242] bg-white/70 dark:bg-[#171717] p-5 md:p-6 shadow-xl shadow-purple-100/40 dark:shadow-none space-y-4 mb-4"
+        className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-5 md:p-6"
       >
         <div className="mx-auto max-w-[900px] space-y-5">
           {messages.map((message) => (
@@ -155,7 +169,7 @@ export default function ChatPage() {
           setErrorMessage={setErrorMessage}
           setLoadingState={setLoadingState}
         />
-        <div className="mt-2 text-center text-[10px] font-semibold text-[#b0a8c2]">
+        <div className="mt-2 text-center text-[10px] font-medium text-[var(--theme-text-muted)]">
           StudyGen AI can make mistakes. Verify important code or details.
         </div>
       </footer>
