@@ -37,19 +37,19 @@
   --color-info-text: #7c9fcc;
   --color-info-border: #4b6b8c;
   
-  /* Background: Warm charcoal / Deep neutral black */
-  --color-bg-primary: #151615;
-  --color-bg-secondary: #1a1b1a;
-  --color-bg-tertiary: #222322;
-  --color-bg-surface: rgba(30, 31, 30, 0.85);
+  /* Background: Premium Deep Space / OLED Black */
+  --color-bg-primary: #0a0a0c;
+  --color-bg-secondary: #121214;
+  --color-bg-tertiary: #1a1a1c;
+  --color-bg-surface: rgba(20, 20, 22, 0.85);
   
   /* Text */
   --color-text-primary: #e6e6e2;
   --color-text-secondary: #a6a6a2;
   --color-text-muted: #737370;
   
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-hover: rgba(255, 255, 255, 0.15);
+  --color-border: rgba(255, 255, 255, 0.05);
+  --color-border-hover: rgba(255, 255, 255, 0.12);
 
   /* ── Design System Typography Tokens ── */
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

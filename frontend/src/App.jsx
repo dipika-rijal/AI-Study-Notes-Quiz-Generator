@@ -20,6 +20,8 @@ import CreateNotes from "./components/app/CreateNotes";
 import CreateQuiz from "./components/app/CreateQuiz";
 import History from "./pages/History";
 import FocusMode from "./pages/FocusMode";
+import Settings from "./pages/Settings";
+import EditProfileModal from "./components/modals/EditProfileModal";
 
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import GuestRoute from "./components/routes/GuestRoute";
@@ -49,6 +51,8 @@ export default function App() {
   const [authMode, setAuthMode] = useState(null);
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [profileDetails, setProfileDetails] = useState({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -62,6 +66,8 @@ export default function App() {
   async function handleLogout() {
     await signOut(auth);
   }
+
+  const workspaceUser = user ? { ...user, ...profileDetails } : user;
 
   if (!authReady) {
     return (
@@ -95,15 +101,22 @@ export default function App() {
           path="/app"
           element={
             <ProtectedRoute user={user}>
-              <AppLayout user={user} logout={handleLogout} />
+              <AppLayout
+                user={workspaceUser}
+                logout={handleLogout}
+              />
             </ProtectedRoute>
           }
         >
-          <Route index element={<Home user={user} />} />
+          <Route index element={<Home user={workspaceUser} />} />
           <Route path="notes" element={<CreateNotes />} />
           <Route path="quiz" element={<CreateQuiz />} />
           <Route path="history" element={<History />} />
           <Route path="focus" element={<FocusMode />} />
+          <Route
+            path="settings"
+            element={<Settings user={workspaceUser} onEditProfile={() => setIsProfileEditorOpen(true)} />}
+          />
         </Route>
 
         <Route
@@ -122,6 +135,16 @@ export default function App() {
       <AuthModal
         authMode={authMode}
         closeAuthModal={() => setAuthMode(null)}
+      />
+
+      <EditProfileModal
+        isOpen={isProfileEditorOpen}
+        onClose={() => setIsProfileEditorOpen(false)}
+        user={workspaceUser}
+        onSave={(details) => {
+          // Kept local intentionally: connect this seam to Firebase/profile APIs when available.
+          setProfileDetails((current) => ({ ...current, ...details }));
+        }}
       />
     </>
   );

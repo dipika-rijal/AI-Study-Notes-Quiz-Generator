@@ -2,14 +2,14 @@ import { ThemeColors } from './types';
 
 // ── DARK: proper dark theme ──
 export const darkColors: ThemeColors = {
-  bgPrimary:   '#212121',   // ChatGPT Main
-  bgSecondary: '#171717',   // ChatGPT Sidebar
-  bgTertiary:  '#2f2f2f',   // ChatGPT Input/Cards
-  textPrimary:   '#ececec',
-  textSecondary: '#b4b4b4',
-  textMuted:     '#999999',
-  surface:     'rgba(255, 255, 255, 0.04)',
-  glassBorder: 'rgba(255, 255, 255, 0.1)',
+  bgPrimary:   '#0a0a0c',
+  bgSecondary: '#151515',
+  bgTertiary:  '#202020',
+  textPrimary:   '#f4f4f2',
+  textSecondary: '#a7a7a3',
+  textMuted:     '#737370',
+  surface:     'rgba(255, 255, 255, 0.045)',
+  glassBorder: 'rgba(255, 255, 255, 0.07)',
   glowPurple:  '#10a37f',
   glowCyan:    '#10a37f',
   glowPink:    '#10a37f',
@@ -24,14 +24,14 @@ export const darkColors: ThemeColors = {
 
 // ── LIGHT: soft purple-tinted, not butter-yellow ──
 export const lightColors: ThemeColors = {
-  bgPrimary:   '#f5f3ff',
-  bgSecondary: '#ede9fb',
-  bgTertiary:  '#e3dcf5',
-  textPrimary:   '#1c1540',
-  textSecondary: '#55497a',
-  textMuted:     '#8a82a8',
-  surface:     'rgba(255, 255, 255, 0.80)',
-  glassBorder: 'rgba(109, 40, 217, 0.14)',
+  bgPrimary:   '#fafafa',
+  bgSecondary: '#ffffff',
+  bgTertiary:  '#f3f3f1',
+  textPrimary:   '#191919',
+  textSecondary: '#62625f',
+  textMuted:     '#8b8b87',
+  surface:     'rgba(0, 0, 0, 0.025)',
+  glassBorder: 'rgba(0, 0, 0, 0.075)',
   glowPurple:  '#6d28d9',
   glowCyan:    '#0891b2',
   glowPink:    '#db2777',

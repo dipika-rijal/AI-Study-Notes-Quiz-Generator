@@ -1,114 +1,74 @@
-import { useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ArrowUpRight, BrainCircuit, FileText, MessageSquareText, Plus, Upload } from 'lucide-react';
 import ContinueCard from './ContinueCard';
-import { useScrollReveal } from '../../hooks/useAnimations';
+import { getRecentActivity } from '../../api/historyApi';
 
-function QuickActionCard({ icon, title, description, link, delay = 0 }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
-      className="group"
-    >
-      <Link
-        to={link}
-        className="block h-full bg-[var(--theme-bg-secondary)] border border-[var(--theme-glass-border)] rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[var(--color-border-hover)] transition-all duration-300"
-      >
-        <div className="flex items-start gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-xl text-[var(--theme-text-primary)] group-hover:bg-[var(--color-primary-500)] group-hover:text-white transition-colors duration-300">
-            {icon}
-          </div>
-          <div className="flex-1">
-            <h3 className="text-[15px] font-semibold text-[var(--theme-text-primary)] tracking-tight">
-              {title}
-            </h3>
-            <p className="mt-1 text-sm text-[var(--theme-text-secondary)] leading-snug">
-              {description}
-            </p>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
+const actions = [
+  { label: 'Generate notes', description: 'Turn a topic or source into clear study notes.', icon: FileText, to: '/app/notes?type=topic' },
+  { label: 'Ask AI', description: 'Explore an idea, explain a concept, or plan your study.', icon: MessageSquareText, to: '/app/notes' },
+  { label: 'Upload material', description: 'Read a PDF, text file, or Markdown document.', icon: Upload, to: '/app/notes?type=upload' },
+  { label: 'Create quiz', description: 'Build a focused practice set from any subject.', icon: BrainCircuit, to: '/app/quiz?type=topic' },
+];
+
+const fallbackActivity = [
+  { type: 'note', title: 'Machine Learning foundations', meta: 'Note · Updated today' },
+  { type: 'quiz', title: 'Logistic Regression', meta: 'Quiz · 12 of 20 completed' },
+  { type: 'document', title: 'Lecture 04 — Neural Networks.pdf', meta: 'Document · Added yesterday' },
+];
+
+function formatActivity(item) {
+  const title = item.title || item.name || item.topic || 'Untitled learning item';
+  const kind = item.type || item.category || 'Learning item';
+  return { type: String(kind).toLowerCase(), title, meta: item.updatedAt ? `${kind} · Recently updated` : kind };
 }
 
-export default function Home({ user }) {
-  const heroRef = useRef(null);
-  const actionsRef = useRef(null);
+export default function Home() {
+  const [recent, setRecent] = useState(fallbackActivity);
 
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Student';
-
-  useScrollReveal(heroRef,   { delay: 0.1, duration: 0.8, y: 20 });
-  useScrollReveal(actionsRef,{ delay: 0.2, duration: 0.8, y: 20, stagger: 0.1 });
+  useEffect(() => {
+    getRecentActivity(3).then((data) => {
+      const items = Array.isArray(data) ? data : data?.items || data?.history || [];
+      if (items.length) setRecent(items.slice(0, 3).map(formatActivity));
+    }).catch(() => {});
+  }, []);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 pb-12">
-      {/* Header */}
-      <header className="pt-4 pb-2" ref={heroRef}>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--theme-text-primary)]">
-          Welcome back, {displayName}
-        </h1>
-        <p className="mt-2 text-[var(--theme-text-secondary)] text-lg">
-          Ready to continue your study session?
-        </p>
+    <div className="mx-auto max-w-5xl space-y-9 pb-12">
+      <header className="flex flex-wrap items-end justify-between gap-4 pt-1">
+        <div>
+          <p className="text-sm font-medium text-[var(--theme-text-secondary)]">Your learning workspace</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-[-0.045em] text-[var(--theme-text-primary)] sm:text-4xl">Pick up where you left off.</h1>
+        </div>
+        <Link to="/app/notes" className="inline-flex items-center gap-2 rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3.5 py-2.5 text-sm font-medium text-[var(--theme-text-primary)] transition hover:bg-[var(--theme-bg-tertiary)]"><Plus size={16} />New study session</Link>
       </header>
 
-      {/* Main Action */}
-      <section>
-        <ContinueCard 
-          topic="Machine Learning"
-          subtopic="Logistic Regression"
-          completed={12}
-          total={20}
-          lastStudied="2 hours ago"
-          link="/app/quiz"
-        />
+      <section aria-labelledby="continue-learning">
+        <div className="mb-3 flex items-center justify-between"><h2 id="continue-learning" className="text-sm font-semibold text-[var(--theme-text-primary)]">Continue learning</h2><span className="text-xs text-[var(--theme-text-muted)]">Your active journey</span></div>
+        <ContinueCard topic="Machine Learning" subtopic="Logistic Regression" completed={12} total={20} lastStudied="2 hours ago" link="/app/quiz" />
       </section>
 
-      {/* Quick Actions */}
-      <section ref={actionsRef} className="space-y-4">
-        <h2 className="text-sm font-semibold tracking-wider text-[var(--theme-text-muted)] uppercase px-1">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <QuickActionCard 
-            icon="📝" 
-            title="Create Notes"  
-            description="Turn topics or documents into organized study material."       
-            link="/app/notes?type=topic" 
-            delay={0.1} 
-          />
-          <QuickActionCard 
-            icon="🎯" 
-            title="Generate Quiz"   
-            description="Test your knowledge with AI-generated questions." 
-            link="/app/quiz?type=topic"  
-            delay={0.2} 
-          />
-          <QuickActionCard 
-            icon="📚" 
-            title="Review Flashcards"  
-            description="Practice active recall on your saved decks."         
-            link="/app/history"          
-            delay={0.3} 
-          />
-          <QuickActionCard 
-            icon="🎧" 
-            title="Focus Mode"  
-            description="Enter a distraction-free environment for deep work."         
-            link="/app/focus"          
-            delay={0.4} 
-          />
+      <section aria-labelledby="study-assistant">
+        <div className="mb-3"><p className="text-sm font-semibold text-[var(--theme-text-primary)]" id="study-assistant">AI study assistant</p><p className="mt-1 text-sm text-[var(--theme-text-secondary)]">Start with the work you need to make progress today.</p></div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {actions.map(({ label, description, icon: Icon, to }, index) => (
+            <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, delay: index * 0.045 }} whileHover={{ y: -2 }}>
+              <Link to={to} className="group flex min-h-32 items-start gap-4 rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-5 shadow-sm transition-colors hover:border-[var(--color-border-hover)] hover:bg-[var(--theme-bg-tertiary)]">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--theme-bg-tertiary)] text-[var(--color-primary-600)]"><Icon size={19} strokeWidth={1.8} /></span>
+                <span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2 text-sm font-semibold text-[var(--theme-text-primary)]">{label}<ArrowUpRight size={16} className="text-[var(--theme-text-muted)] transition group-hover:text-[var(--theme-text-primary)]" /></span><span className="mt-1.5 block text-sm leading-5 text-[var(--theme-text-secondary)]">{description}</span></span>
+              </Link>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* Ambient calm background */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[var(--color-primary-500)] opacity-[0.02] blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full bg-[var(--color-secondary-500)] opacity-[0.02] blur-[100px]" />
-      </div>
+      <section aria-labelledby="recent-learning">
+        <div className="mb-3 flex items-center justify-between"><h2 id="recent-learning" className="text-sm font-semibold text-[var(--theme-text-primary)]">Recent learning</h2><Link to="/app/history" className="text-sm font-medium text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]">View all</Link></div>
+        <div className="overflow-hidden rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)]">
+          {recent.map((item, index) => <Link key={`${item.title}-${index}`} to="/app/history" className="group flex items-center gap-3 border-b border-[var(--theme-glass-border)] px-5 py-4 last:border-0 hover:bg-[var(--theme-surface-hover)]"><span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)]">{item.type.includes('quiz') ? <BrainCircuit size={17} /> : item.type.includes('document') ? <Upload size={17} /> : <FileText size={17} />}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--theme-text-primary)]">{item.title}</span><span className="mt-0.5 block text-xs text-[var(--theme-text-muted)]">{item.meta}</span></span><ArrowUpRight size={16} className="text-[var(--theme-text-muted)] opacity-0 transition group-hover:opacity-100" /></Link>)}
+        </div>
+      </section>
     </div>
   );
 }

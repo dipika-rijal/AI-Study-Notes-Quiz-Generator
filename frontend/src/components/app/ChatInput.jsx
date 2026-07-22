@@ -125,7 +125,7 @@ export default function ChatInput({
 
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="relative flex items-end gap-2 rounded-[28px] border border-purple-100 dark:border-[#424242] bg-[#f3eee8] dark:bg-[#171717] p-2 focus-within:border-[#6757ff] dark:focus-within:border-[#10a37f] focus-within:bg-white dark:focus-within:bg-[#2f2f2f] transition shadow-inner dark:shadow-none">
+      <form onSubmit={handleSubmit} className="relative flex items-end gap-2 rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-2 transition focus-within:border-[var(--color-primary-500)]">
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}
@@ -142,7 +142,7 @@ export default function ChatInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isInputLoading}
           aria-label="Upload document (PDF, TXT, or MD)"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-[#2f2f2f] hover:bg-[#eeeaff] dark:hover:bg-[#424242] text-[#6757ff] dark:text-[#b4b4b4] active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 shadow-sm dark:shadow-none border border-purple-100 dark:border-[#424242]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)] transition hover:text-[var(--theme-text-primary)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           📎
         </button>
@@ -161,7 +161,7 @@ export default function ChatInput({
           disabled={disabled || isInputLoading}
           rows={1}
           style={{ height: "auto" }}
-          className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm font-semibold leading-relaxed text-[#15132b] dark:text-[#ececec] outline-none max-h-40 placeholder:text-[#b7adc4] dark:placeholder:text-[#999999] disabled:cursor-not-allowed"
+          className="max-h-40 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm font-medium leading-relaxed text-[var(--theme-text-primary)] outline-none placeholder:text-[var(--theme-text-muted)] disabled:cursor-not-allowed"
         />
 
         {/* Send Button */}
@@ -169,7 +169,7 @@ export default function ChatInput({
           type="submit"
           disabled={disabled || isInputLoading || !inputValue.trim()}
           aria-label="Send message"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-[#6757ff] to-[#b75cff] dark:from-[#10a37f] dark:to-[#05503e] text-white active:scale-95 hover:-translate-y-0.5 transition shadow-md shadow-purple-100 dark:shadow-none disabled:from-purple-200 disabled:to-purple-300 dark:disabled:from-[#10a37f]/50 dark:disabled:to-[#05503e]/50 disabled:shadow-none disabled:cursor-not-allowed cursor-pointer"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-primary-500)] text-white transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           ✦
         </button>

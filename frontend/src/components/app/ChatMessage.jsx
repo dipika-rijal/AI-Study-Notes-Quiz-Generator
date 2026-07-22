@@ -45,7 +45,7 @@ export default function ChatMessage({
     >
       {/* AI Avatar */}
       {!isUser && (
-        <div className="flex h-9 w-9 shrink-0 select-none items-center justify-center rounded-xl bg-gradient-to-br from-[#6757ff] to-[#9a7cff] dark:from-[#10a37f] dark:to-[#05503e] text-base text-white shadow-md shadow-purple-200 dark:shadow-none">
+        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--color-primary-500)] text-base text-white">
           ✦
         </div>
       )}
@@ -53,8 +53,8 @@ export default function ChatMessage({
       {/* Bubble Wrapper */}
       <div className={`flex flex-col max-w-[85%] md:max-w-[75%] ${isUser ? "items-end" : "items-start"}`}>
         {/* Username/Label header */}
-        <span className="text-[10px] font-extrabold text-[#9a93b3] dark:text-[#999999] mb-1 select-none">
-          {isUser ? "You" : "StudyGen Assistant"}
+        <span className="mb-1.5 text-[11px] font-medium tracking-wide text-[var(--theme-text-muted)] select-none">
+          {isUser ? "You" : "StudyGen AI"}
         </span>
 
         {/* Bubble Layout Content */}
@@ -86,11 +86,11 @@ export default function ChatMessage({
           </Suspense>
         ) : (
           <div
-            className={`rounded-3xl px-5 py-3.5 shadow-sm dark:shadow-none leading-relaxed text-sm font-semibold select-text
+            className={`rounded-2xl px-5 py-4 shadow-sm dark:shadow-none leading-relaxed text-[15px] select-text
               ${
                 isUser
-                  ? "bg-[#6757ff] dark:bg-[#10a37f] text-white rounded-tr-sm"
-                  : "bg-white dark:bg-[#171717] border border-purple-50 dark:border-[#424242] text-[#15132b] dark:text-[#ececec] rounded-tl-sm"
+                ? "bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-[var(--theme-text-primary)] rounded-tr-sm"
+                : "bg-[var(--theme-bg-primary)] border border-[var(--theme-glass-border)] text-[var(--theme-text-primary)] rounded-tl-sm"
               }`}
           >
             {type === "loading" ? (

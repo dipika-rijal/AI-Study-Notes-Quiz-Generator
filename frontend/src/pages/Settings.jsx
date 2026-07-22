@@ -1,0 +1,17 @@
+import { Bell, ChevronRight, Monitor, Palette, UserRound } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
+
+function SettingRow({ icon: Icon, title, description, action }) {
+  return <div className="flex items-center gap-4 px-5 py-4"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)]"><Icon size={17} /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium text-[var(--theme-text-primary)]">{title}</span><span className="mt-0.5 block text-xs leading-5 text-[var(--theme-text-secondary)]">{description}</span></span>{action || <ChevronRight size={17} className="text-[var(--theme-text-muted)]" />}</div>;
+}
+
+export default function Settings({ user, onEditProfile }) {
+  const { theme, toggleTheme } = useTheme();
+  const name = user?.displayName || user?.email?.split('@')[0] || 'Student';
+  return <div className="mx-auto max-w-3xl pb-12"><header className="border-b border-[var(--theme-glass-border)] pb-6"><p className="text-sm font-medium text-[var(--theme-text-secondary)]">Workspace</p><h1 className="mt-1 text-3xl font-semibold tracking-[-0.04em]">Settings</h1><p className="mt-2 text-sm text-[var(--theme-text-secondary)]">Manage the way StudyGenAI works for you.</p></header><div className="mt-8 space-y-7">
+    <section><h2 className="mb-3 text-sm font-semibold text-[var(--theme-text-primary)]">Profile</h2><div className="overflow-hidden rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)]"><SettingRow icon={UserRound} title={name} description={user?.email || 'Personal learning profile'} action={<button type="button" onClick={onEditProfile} className="rounded-lg border border-[var(--theme-glass-border)] px-3 py-2 text-xs font-medium text-[var(--theme-text-primary)] transition hover:bg-[var(--theme-bg-tertiary)]">Edit profile</button>} /></div></section>
+    <section><h2 className="mb-3 text-sm font-semibold text-[var(--theme-text-primary)]">Appearance</h2><div className="overflow-hidden rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)]"><SettingRow icon={Palette} title="Theme" description={`Using ${theme} mode`} action={<button type="button" onClick={toggleTheme} className="rounded-lg border border-[var(--theme-glass-border)] px-3 py-2 text-xs font-medium capitalize text-[var(--theme-text-primary)] transition hover:bg-[var(--theme-bg-tertiary)]">Switch to {theme === 'dark' ? 'light' : 'dark'}</button>} /><div className="border-t border-[var(--theme-glass-border)]"><SettingRow icon={Monitor} title="System preference" description="Theme selection is saved to this device." /></div></div></section>
+    <section><h2 className="mb-3 text-sm font-semibold text-[var(--theme-text-primary)]">Study preferences</h2><div className="overflow-hidden rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)]"><SettingRow icon={Bell} title="Learning reminders" description="Reminder controls will be available when notifications are connected." /></div></section>
+    <section><h2 className="mb-3 text-sm font-semibold text-[var(--theme-text-primary)]">Account</h2><div className="overflow-hidden rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)]"><SettingRow icon={UserRound} title="Account details" description="Authentication and account management stay connected to your existing sign-in provider." /></div></section>
+  </div></div>;
+}
