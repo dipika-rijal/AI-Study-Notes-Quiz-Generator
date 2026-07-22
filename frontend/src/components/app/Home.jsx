@@ -1,157 +1,113 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useStreak } from '../../hooks/useStreak';
-import { useScrollReveal, useParallax } from '../../hooks/useAnimations';
-import HeroWelcome from './HeroWelcome';
+import ContinueCard from './ContinueCard';
+import { useScrollReveal } from '../../hooks/useAnimations';
 
-function AnimatedStatCard({ icon, label, value, color, delay = 0 }) {
-  const cardRef = useRef(null);
-  useParallax(cardRef, { intensity: 0.05, maxRotation: 3 });
-
-  const colorMap = {
-    purple: { bg: 'rgba(139,92,246,0.15)', text: 'var(--theme-glow-purple)' },
-    cyan:   { bg: 'rgba(6,182,212,0.15)',  text: 'var(--theme-glow-cyan)' },
-    orange: { bg: 'rgba(245,158,11,0.15)', text: 'var(--theme-glow-orange)' },
-    pink:   { bg: 'rgba(236,72,153,0.15)', text: 'var(--theme-glow-pink)' },
-  };
-  const c = colorMap[color] || colorMap.purple;
-
+function QuickActionCard({ icon, title, description, link, delay = 0 }) {
   return (
     <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 30, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.6, ease: 'easeOut' }}
-      className="surface-card rounded-[20px] p-6 cursor-pointer"
-      style={{ transformStyle: 'preserve-3d' }}
-    >
-      <div className="flex items-center gap-4">
-        <div style={{ background: c.bg, borderRadius: '12px', padding: '12px' }}>
-          <span className="text-2xl">{icon}</span>
-        </div>
-        <div>
-          <p className="text-2xl font-black" style={{ color: 'var(--theme-text-primary)' }}>
-            {value}
-          </p>
-          <p className="text-sm font-medium" style={{ color: 'var(--theme-text-secondary)' }}>
-            {label}
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function ActionCard({ icon, title, description, link, color, delay = 0 }) {
-  const cardRef = useRef(null);
-  useParallax(cardRef, { intensity: 0.06, maxRotation: 4 });
-
-  const colorMap = {
-    purple: { bg: 'rgba(139,92,246,0.15)', text: 'var(--theme-glow-purple)' },
-    cyan:   { bg: 'rgba(6,182,212,0.15)',  text: 'var(--theme-glow-cyan)' },
-    orange: { bg: 'rgba(245,158,11,0.15)', text: 'var(--theme-glow-orange)' },
-    pink:   { bg: 'rgba(236,72,153,0.15)', text: 'var(--theme-glow-pink)' },
-  };
-  const c = colorMap[color] || colorMap.purple;
-
-  return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.6, ease: 'easeOut' }}
-      className="surface-card rounded-[20px] p-6 group cursor-pointer"
-      style={{ transformStyle: 'preserve-3d' }}
+      transition={{ delay, duration: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
+      className="group"
     >
-      <div className="flex items-start gap-4">
-        <div
-          style={{
-            background: c.bg,
-            borderRadius: '12px',
-            padding: '12px',
-            transition: 'transform 0.3s ease',
-          }}
-          className="group-hover:scale-110"
-        >
-          <span className="text-2xl">{icon}</span>
+      <Link
+        to={link}
+        className="block h-full bg-[var(--theme-bg-secondary)] border border-[var(--theme-glass-border)] rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[var(--color-border-hover)] transition-all duration-300"
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-xl text-[var(--theme-text-primary)] group-hover:bg-[var(--color-primary-500)] group-hover:text-white transition-colors duration-300">
+            {icon}
+          </div>
+          <div className="flex-1">
+            <h3 className="text-[15px] font-semibold text-[var(--theme-text-primary)] tracking-tight">
+              {title}
+            </h3>
+            <p className="mt-1 text-sm text-[var(--theme-text-secondary)] leading-snug">
+              {description}
+            </p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold" style={{ color: 'var(--theme-text-primary)' }}>
-            {title}
-          </h3>
-          <p className="mt-1 text-sm" style={{ color: 'var(--theme-text-secondary)' }}>
-            {description}
-          </p>
-          <Link
-            to={link}
-            style={{
-              display: 'inline-block',
-              marginTop: '14px',
-              padding: '8px 18px',
-              borderRadius: '10px',
-              background: c.bg,
-              color: c.text,
-              fontSize: '13px',
-              fontWeight: '700',
-              textDecoration: 'none',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            Start →
-          </Link>
-        </div>
-      </div>
+      </Link>
     </motion.div>
   );
 }
 
 export default function Home({ user }) {
-  const { currentStreak, loading: streakLoading } = useStreak();
-  const [stats] = useState({ notesCount: 12, quizzesCount: 8 });
-
   const heroRef = useRef(null);
-  const statsRef = useRef(null);
   const actionsRef = useRef(null);
 
-  useScrollReveal(heroRef,   { delay: 0.1, duration: 0.8, y: 30 });
-  useScrollReveal(statsRef,  { delay: 0.15, duration: 0.7, y: 30, stagger: 0.1 });
-  useScrollReveal(actionsRef,{ delay: 0.2, duration: 0.8, y: 40, stagger: 0.1 });
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Student';
+
+  useScrollReveal(heroRef,   { delay: 0.1, duration: 0.8, y: 20 });
+  useScrollReveal(actionsRef,{ delay: 0.2, duration: 0.8, y: 20, stagger: 0.1 });
 
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <div ref={heroRef}>
-        <HeroWelcome
-          user={user}
-          streak={streakLoading ? 0 : currentStreak}
-          notesCount={stats.notesCount}
-          quizzesCount={stats.quizzesCount}
+    <div className="max-w-5xl mx-auto space-y-10 pb-12">
+      {/* Header */}
+      <header className="pt-4 pb-2" ref={heroRef}>
+        <h1 className="text-3xl font-semibold tracking-tight text-[var(--theme-text-primary)]">
+          Welcome back, {displayName}
+        </h1>
+        <p className="mt-2 text-[var(--theme-text-secondary)] text-lg">
+          Ready to continue your study session?
+        </p>
+      </header>
+
+      {/* Main Action */}
+      <section>
+        <ContinueCard 
+          topic="Machine Learning"
+          subtopic="Logistic Regression"
+          completed={12}
+          total={20}
+          lastStudied="2 hours ago"
+          link="/app/quiz"
         />
-      </div>
+      </section>
 
-      {/* Stats Row */}
-      <div ref={statsRef} className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <AnimatedStatCard icon="📝" label="Notes Created"      value={stats.notesCount}                      color="purple" delay={0.1} />
-        <AnimatedStatCard icon="🧠" label="Quizzes Completed"  value={stats.quizzesCount}                    color="cyan"   delay={0.2} />
-        <AnimatedStatCard icon="🔥" label="Day Streak"         value={streakLoading ? 0 : currentStreak}    color="orange" delay={0.3} />
-      </div>
+      {/* Quick Actions */}
+      <section ref={actionsRef} className="space-y-4">
+        <h2 className="text-sm font-semibold tracking-wider text-[var(--theme-text-muted)] uppercase px-1">
+          Quick Actions
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <QuickActionCard 
+            icon="📝" 
+            title="Create Notes"  
+            description="Turn topics or documents into organized study material."       
+            link="/app/notes?type=topic" 
+            delay={0.1} 
+          />
+          <QuickActionCard 
+            icon="🎯" 
+            title="Generate Quiz"   
+            description="Test your knowledge with AI-generated questions." 
+            link="/app/quiz?type=topic"  
+            delay={0.2} 
+          />
+          <QuickActionCard 
+            icon="📚" 
+            title="Review Flashcards"  
+            description="Practice active recall on your saved decks."         
+            link="/app/history"          
+            delay={0.3} 
+          />
+          <QuickActionCard 
+            icon="🎧" 
+            title="Focus Mode"  
+            description="Enter a distraction-free environment for deep work."         
+            link="/app/focus"          
+            delay={0.4} 
+          />
+        </div>
+      </section>
 
-      {/* Action Cards */}
-      <div ref={actionsRef} className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <ActionCard icon="📚" title="Create Notes"  description="Turn any topic into organized study notes"       link="/app/notes?type=topic" color="purple" delay={0.1} />
-        <ActionCard icon="🎯" title="Create Quiz"   description="Test your knowledge with AI-generated questions" link="/app/quiz?type=topic"  color="cyan"   delay={0.2} />
-        <ActionCard icon="📊" title="View History"  description="Review all your saved notes and quizzes"         link="/app/history"          color="pink"   delay={0.3} />
-      </div>
-
-      {/* Ambient background blobs */}
+      {/* Ambient calm background */}
       <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 h-64 w-64 rounded-full blur-3xl animate-pulse"
-             style={{ background: 'rgba(139,92,246,0.06)' }} />
-        <div className="absolute bottom-1/3 right-1/4 h-80 w-80 rounded-full blur-3xl animate-pulse"
-             style={{ background: 'rgba(6,182,212,0.05)', animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 h-96 w-96 rounded-full blur-3xl animate-pulse"
-             style={{ background: 'rgba(236,72,153,0.04)', animationDelay: '4s' }} />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[var(--color-primary-500)] opacity-[0.02] blur-[100px]" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full bg-[var(--color-secondary-500)] opacity-[0.02] blur-[100px]" />
       </div>
     </div>
   );

@@ -2,14 +2,14 @@ import { NavLink } from 'react-router-dom';
 import { ThemeToggle } from '../ThemeToggle';
 
 export default function Sidebar({ user, logout }) {
-  const displayName = user.displayName || user.email?.split('@')[0] || 'Student';
-  const email = user.email || 'No email';
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'Student';
+  const email = user?.email || 'No email';
 
   const menuItems = [
-    { to: '/app', label: 'Home', icon: '✦', end: true },
-    { to: '/app/notes', label: 'Create Notes', icon: '📚' },
-    { to: '/app/quiz', label: 'Create Quiz', icon: '🎯' },
-    { to: '/app/history', label: 'History', icon: '📊' },
+    { to: '/app', label: 'Home', icon: '⌂', end: true },
+    { to: '/app/notes', label: 'Notes', icon: '📝' },
+    { to: '/app/quiz', label: 'Quiz', icon: '🎯' },
+    { to: '/app/history', label: 'Memory', icon: '📚' },
   ];
 
   return (
@@ -19,35 +19,38 @@ export default function Sidebar({ user, logout }) {
         borderRight: '1px solid var(--theme-glass-border)',
         color: 'var(--theme-text-primary)',
       }}
-      className="sticky top-0 flex h-screen w-[250px] flex-col px-4 py-5"
+      className="sticky top-0 flex h-screen w-[260px] flex-col px-4 py-6"
     >
       {/* Logo */}
-      <NavLink to="/app" end className="mb-6 flex items-center gap-3 text-left group">
-        <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-400 text-white shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform duration-300">
-          ✦
+      <NavLink to="/app" end className="mb-8 flex items-center gap-3 px-2 text-left group">
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-[var(--color-primary-500)] shadow-sm group-hover:scale-105 transition-transform duration-300">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
         </div>
-        <div className="text-lg font-black tracking-tight" style={{ color: 'var(--theme-text-primary)' }}>
-          StudyGen <span className="text-purple-400">AI</span>
+        <div className="text-xl font-bold tracking-tight text-[var(--theme-text-primary)]">
+          StudyGen
         </div>
       </NavLink>
 
       {/* User Card */}
       <div
         style={{
-          background: 'var(--theme-surface)',
+          background: 'var(--theme-bg-tertiary)',
           border: '1px solid var(--theme-glass-border)',
         }}
-        className="mb-6 rounded-3xl p-4 hover:opacity-90 transition-all duration-300"
+        className="mb-8 rounded-xl p-3 shadow-sm hover:border-[var(--color-border-hover)] transition-colors duration-300"
       >
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-400 text-sm font-black text-white shadow-md shadow-purple-500/30 shrink-0">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--color-primary-500)] text-sm font-semibold text-white shrink-0">
             {displayName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-black" style={{ color: 'var(--theme-text-primary)' }}>
+            <p className="truncate text-sm font-semibold text-[var(--theme-text-primary)]">
               {displayName}
             </p>
-            <p className="truncate text-xs font-semibold" style={{ color: 'var(--theme-text-secondary)' }}>
+            <p className="truncate text-xs text-[var(--theme-text-secondary)] mt-0.5">
               {email}
             </p>
           </div>
@@ -55,60 +58,73 @@ export default function Sidebar({ user, logout }) {
       </div>
 
       {/* Nav Links */}
-      <nav className="space-y-1">
+      <nav className="space-y-1.5 flex-1">
+        <div className="px-3 mb-2 text-xs font-medium tracking-wider text-[var(--theme-text-muted)] uppercase">
+          Learning
+        </div>
         {menuItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold transition-all duration-300 ${
+              `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-300 ${
                 isActive ? 'active-nav-item' : 'inactive-nav-item'
               }`
             }
             style={({ isActive }) => ({
               background: isActive
-                ? 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(6,182,212,0.15))'
+                ? 'var(--theme-surface)'
                 : 'transparent',
               color: isActive ? 'var(--theme-text-primary)' : 'var(--theme-text-secondary)',
+              border: isActive ? '1px solid var(--theme-glass-border)' : '1px solid transparent',
+              boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
             })}
           >
-            <span className="text-base">{item.icon}</span>
+            <span className="text-lg opacity-80">{item.icon}</span>
             {item.label}
           </NavLink>
         ))}
-      </nav>
 
-      {/* Spacer */}
-      <div className="flex-1" />
+        <div className="px-3 mt-8 mb-2 text-xs font-medium tracking-wider text-[var(--theme-text-muted)] uppercase">
+          Deep Work
+        </div>
+        <NavLink
+            to="/app/focus"
+            className={({ isActive }) =>
+              `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-300`
+            }
+            style={({ isActive }) => ({
+              background: isActive
+                ? 'var(--color-primary-600)'
+                : 'var(--color-primary-500)',
+              color: 'white',
+              boxShadow: isActive ? 'var(--theme-card-hover-shadow)' : 'var(--theme-card-shadow)',
+            })}
+          >
+            <span className="text-lg opacity-90">🎧</span>
+            Focus Mode
+          </NavLink>
+      </nav>
 
       {/* Theme Toggle */}
       <div
         style={{ borderTop: '1px solid var(--theme-glass-border)' }}
-        className="pt-4 pb-2 flex items-center justify-between px-2"
+        className="pt-5 pb-3 flex items-center justify-between px-3 mt-6"
       >
-        <span className="text-xs font-bold" style={{ color: 'var(--theme-text-muted)' }}>
-          Theme
+        <span className="text-xs font-medium text-[var(--theme-text-secondary)]">
+          Appearance
         </span>
         <ThemeToggle />
       </div>
 
       {/* Sign Out */}
-      <div style={{ borderTop: '1px solid var(--theme-glass-border)' }} className="pt-3">
+      <div className="px-1 mb-2">
         <button
           onClick={logout}
-          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-all duration-300"
-          style={{ color: 'var(--theme-text-secondary)' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(239,68,68,0.1)';
-            e.currentTarget.style.color = '#ef4444';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--theme-text-secondary)';
-          }}
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium transition-all duration-300 text-[var(--theme-text-secondary)] hover:bg-[var(--color-error-bg)] hover:text-[var(--color-error-text)]"
         >
-          ⇱ Sign Out
+          <span className="opacity-70 text-lg">⇱</span> Sign Out
         </button>
       </div>
     </aside>

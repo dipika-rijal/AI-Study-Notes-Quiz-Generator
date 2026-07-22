@@ -19,6 +19,7 @@ import Home from "./components/app/Home";
 import CreateNotes from "./components/app/CreateNotes";
 import CreateQuiz from "./components/app/CreateQuiz";
 import History from "./pages/History";
+import FocusMode from "./pages/FocusMode";
 
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import GuestRoute from "./components/routes/GuestRoute";
@@ -102,6 +103,7 @@ export default function App() {
           <Route path="notes" element={<CreateNotes />} />
           <Route path="quiz" element={<CreateQuiz />} />
           <Route path="history" element={<History />} />
+          <Route path="focus" element={<FocusMode />} />
         </Route>
 
         <Route
