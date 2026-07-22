@@ -1,12 +1,13 @@
 import HeroPreview from "./HeroPreview";
+import { Button, Badge } from "../../design-system";
 
 export default function Hero({ openModal }) {
   return (
     <section className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-5 py-20 lg:grid-cols-2 lg:py-24">
       <div>
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-[#eeeaff] px-4 py-2 text-sm font-extrabold text-[#6757ff] shadow-sm">
+        <Badge variant="primary" size="md" className="mb-6">
           ✦ AI Study Assistant
-        </div>
+        </Badge>
 
         <h1 className="max-w-2xl text-5xl font-black leading-[0.95] tracking-[-0.07em] text-[#15132b] md:text-7xl">
           Your Study Material,{" "}
@@ -23,31 +24,33 @@ export default function Hero({ openModal }) {
 
         <div className="mt-7 flex flex-wrap items-center gap-3 text-sm font-extrabold text-[#8a83a5]">
           <span>Start from:</span>
-          <span className="rounded-full border border-purple-200 bg-[#eeeaff] px-3 py-2 text-[#6757ff]">
+          <Badge variant="primary" size="sm">
             ⌕ Topic
-          </span>
-          <span className="rounded-full border border-emerald-200 bg-[#d9f7e8] px-3 py-2 text-emerald-700">
+          </Badge>
+          <Badge variant="secondary" size="sm">
             ☘ Paste Content
-          </span>
-          <span className="rounded-full border border-orange-200 bg-[#fff1e6] px-3 py-2 text-orange-600">
+          </Badge>
+          <Badge variant="warning" size="sm">
             ⌁ Video Link
-          </span>
+          </Badge>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-4">
-          <button
+          <Button
             onClick={() => openModal("notes")}
-            className="rounded-full bg-gradient-to-r from-[#6757ff] to-[#8b5cf6] px-7 py-4 font-extrabold text-white shadow-xl shadow-purple-300 transition hover:-translate-y-1"
+            size="lg"
+            variant="primary"
           >
             Make Notes →
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={() => openModal("quiz")}
-            className="rounded-full border border-purple-100 bg-white/80 px-7 py-4 font-extrabold text-[#15132b] shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+            size="lg"
+            variant="outline"
           >
             ◎ Start Quiz
-          </button>
+          </Button>
         </div>
 
         <p className="mt-5 text-sm font-semibold text-[#9a93b3]">

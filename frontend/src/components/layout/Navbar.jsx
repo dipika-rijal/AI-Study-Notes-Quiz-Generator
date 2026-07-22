@@ -1,3 +1,5 @@
+import { Button } from "../../design-system";
+
 export default function Navbar({ openModal, openAuthModal, user, logout }) {
   return (
     <header className="sticky top-0 z-50 border-b border-purple-100/70 bg-[#fffaf3]/80 backdrop-blur-xl">
@@ -31,19 +33,21 @@ export default function Navbar({ openModal, openAuthModal, user, logout }) {
                 {user.displayName || user.email}
               </span>
 
-              <button
+              <Button
                 onClick={logout}
-                className="rounded-full border border-purple-100 bg-white/80 px-5 py-3 text-[#6757ff] shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
+                variant="outline"
+                size="md"
               >
                 Logout
-              </button>
+              </Button>
 
-              <button
+              <Button
                 onClick={() => openModal("notes")}
-                className="rounded-full bg-gradient-to-r from-[#6757ff] to-[#8b5cf6] px-5 py-3 text-white shadow-lg shadow-purple-300 transition hover:-translate-y-0.5 hover:shadow-xl"
+                variant="primary"
+                size="md"
               >
                 Make Notes →
-              </button>
+              </Button>
             </>
           ) : (
             <>
@@ -54,12 +58,13 @@ export default function Navbar({ openModal, openAuthModal, user, logout }) {
                 Sign in
               </button>
 
-              <button
+              <Button
                 onClick={() => openAuthModal("signup")}
-                className="rounded-full bg-gradient-to-r from-[#6757ff] to-[#8b5cf6] px-5 py-3 text-white shadow-lg shadow-purple-300 transition hover:-translate-y-0.5 hover:shadow-xl"
+                variant="primary"
+                size="md"
               >
                 Get Started →
-              </button>
+              </Button>
             </>
           )}
         </div>
