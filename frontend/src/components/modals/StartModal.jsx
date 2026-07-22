@@ -1,4 +1,5 @@
 ﻿import { useNavigate } from "react-router-dom";
+import { Modal, Card, Badge } from "../../design-system";
 
 export default function StartModal({
   modalType,
@@ -65,62 +66,55 @@ export default function StartModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#15132b]/30 px-5 backdrop-blur-xl"
-      onClick={closeModal}
+    <Modal
+      isOpen={!!modalType}
+      onClose={closeModal}
+      size="xl"
+      closeOnOverlayClick={true}
+      closeOnEscape={true}
     >
+      <h2 className="text-center text-3xl font-black tracking-[-0.05em] text-[#15132b] md:text-5xl">
+        {isQuiz
+          ? "How would you like to create your quiz?"
+          : "How would you like to create your note?"}
+      </h2>
+
+      <p className="mx-auto mt-4 max-w-xl text-center leading-7 text-[#77718f]">
+        {user
+          ? "Choose a starting method and continue inside your StudyGen workspace."
+          : "Login or create an account first, then continue to the generator workspace."}
+      </p>
+
       <div
-        className="relative w-full max-w-4xl rounded-[34px] border border-purple-100 bg-white/95 p-8 shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
+        className={`mt-8 grid grid-cols-1 gap-4 ${
+          isQuiz ? "md:grid-cols-2" : "md:grid-cols-3"
+        }`}
       >
-        <button
-          onClick={closeModal}
-          className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-[#f3f0f9] text-xl font-black text-[#7c7497]"
-        >
-          ×
-        </button>
+        {cards.map((card) => (
+          <Card
+            key={card.title}
+            onClick={() => handleCardClick(card.type)}
+            variant="elevated"
+            hover={true}
+            padding="lg"
+            style={{ cursor: 'pointer', textAlign: 'center' }}
+          >
+            <div className="mb-4 text-4xl">{card.icon}</div>
 
-        <h2 className="mt-4 text-center text-3xl font-black tracking-[-0.05em] text-[#15132b] md:text-5xl">
-          {isQuiz
-            ? "How would you like to create your quiz?"
-            : "How would you like to create your note?"}
-        </h2>
+            <h3 className="mb-2 text-lg font-black text-[#15132b]">
+              {card.title}
+            </h3>
 
-        <p className="mx-auto mt-4 max-w-xl text-center leading-7 text-[#77718f]">
-          {user
-            ? "Choose a starting method and continue inside your StudyGen workspace."
-            : "Login or create an account first, then continue to the generator workspace."}
-        </p>
-
-        <div
-          className={`mt-8 grid grid-cols-1 gap-4 ${
-            isQuiz ? "md:grid-cols-2" : "md:grid-cols-3"
-          }`}
-        >
-          {cards.map((card) => (
-            <button
-              key={card.title}
-              onClick={() => handleCardClick(card.type)}
-              className="rounded-3xl border border-purple-100 bg-white/80 p-7 text-center transition hover:-translate-y-2 hover:shadow-xl"
-            >
-              <div className="mb-4 text-4xl">{card.icon}</div>
-
-              <h3 className="mb-2 text-lg font-black text-[#15132b]">
-                {card.title}
-              </h3>
-
-              <p className="text-sm leading-6 text-[#77718f]">{card.text}</p>
-            </button>
-          ))}
-        </div>
-
-        {!user && (
-          <p className="mt-6 rounded-2xl bg-[#eeeaff] px-4 py-3 text-center text-sm font-bold text-[#6757ff]">
-            Login is required because your generated notes and quizzes will
-            belong to your account.
-          </p>
-        )}
+            <p className="text-sm leading-6 text-[#77718f]">{card.text}</p>
+          </Card>
+        ))}
       </div>
-    </div>
+
+      {!user && (
+        <Badge variant="primary" size="md" className="mt-6" style={{ display: 'block', textAlign: 'center', padding: '12px 16px' }}>
+          Login is required because your generated notes and quizzes will belong to your account.
+        </Badge>
+      )}
+    </Modal>
   );
 }
