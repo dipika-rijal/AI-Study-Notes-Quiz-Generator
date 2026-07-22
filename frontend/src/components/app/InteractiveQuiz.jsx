@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from 'framer-motion';
 import QuizReview from "./QuizReview";
+import QuizOption from "./QuizOption";
+import ProgressBar from "../ui/ProgressBar";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -73,29 +76,6 @@ function optionExplanation(question, letter) {
   );
 }
 
-function inferAreas(questions, selectedAnswers) {
-  const strong = [];
-  const weak = [];
-
-  questions.forEach((question, index) => {
-    const selectedLetter = selectedLetterFor(question, selectedAnswers[index]);
-    const target = selectedLetter === question.correctAnswer ? strong : weak;
-    const words = question.question
-      .replace(/[^\w\s]/g, " ")
-      .split(/\s+/)
-      .filter((word) => word.length > 4)
-      .slice(0, 3)
-      .join(" ");
-
-    if (words) target.push(words);
-  });
-
-  return {
-    strong: [...new Set(strong)].slice(0, 4),
-    weak: [...new Set(weak)].slice(0, 4)
-  };
-}
-
 export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpdate }) {
   const questions = useMemo(() => normalizeQuestions(data), [data]);
   const restoredState = normalizeState(initialAnswers);
@@ -107,7 +87,7 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
     restoredState.currentQuestionIndex || 0
   );
   const [submitted, setSubmitted] = useState(Boolean(restoredState.submitted));
-  const [openedExplanations, setOpenedExplanations] = useState(
+  const [openedExplanations] = useState(
     restoredState.openedExplanations || {}
   );
   const [score, setScore] = useState(restoredState.score ?? null);
@@ -143,7 +123,7 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
 
   if (!questions.length) {
     return (
-      <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 text-amber-800 dark:text-amber-400 text-sm font-semibold">
+      <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 text-amber-800 dark:text-amber-400 text-sm font-medium">
         No quiz questions found in this response.
       </div>
     );
@@ -151,9 +131,7 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
 
   const totalQuestions = questions.length;
   const answeredCount = Object.keys(selectedAnswers).length;
-  const percentage = score === null ? 0 : Math.round((score / totalQuestions) * 100);
   const currentQuestion = questions[currentQuestionIndex] || questions[0];
-  const areas = submitted ? inferAreas(questions, selectedAnswers) : { strong: [], weak: [] };
 
   function chooseAnswer(index, letter) {
     if (submitted) return;
@@ -165,13 +143,6 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
 
   function goToQuestion(index) {
     setCurrentQuestionIndex(Math.max(0, Math.min(index, totalQuestions - 1)));
-  }
-
-  function toggleExplanation(index) {
-    setOpenedExplanations((previous) => ({
-      ...previous,
-      [index]: !previous[index]
-    }));
   }
 
   function buildLocalFeedback() {
@@ -271,148 +242,117 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
     submitQuiz();
   }
 
-  function renderOption(question, questionIndex, option, optionIndex) {
-    const letter = OPTION_LETTERS[optionIndex];
-    const selectedLetter = selectedLetterFor(question, selectedAnswers[questionIndex]);
-    const isSelected = selectedLetter === letter;
-    const isCorrect = question.correctAnswer === letter;
-
-    let style =
-      "bg-white dark:bg-[#2f2f2f] border-purple-100 dark:border-[#424242] hover:bg-[#fff5ec] dark:hover:bg-[#171717] hover:border-[#6757ff] dark:hover:border-[#10a37f] text-[#15132b] dark:text-[#ececec]";
-
-    if (submitted) {
-      if (isCorrect) {
-        style = "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-400 font-bold";
-      } else if (isSelected) {
-        style = "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 font-bold";
-      } else {
-        style = "bg-white dark:bg-[#171717] border-purple-50 dark:border-[#424242] text-gray-500 dark:text-gray-400";
-      }
-    } else if (isSelected) {
-      style = "bg-[#6757ff]/10 dark:bg-[#10a37f]/20 border-[#6757ff] dark:border-[#10a37f] text-[#15132b] dark:text-[#10a37f] font-bold";
-    }
-
-    return (
-      <button
-        key={letter}
-        type="button"
-        onClick={() => chooseAnswer(questionIndex, letter)}
-        disabled={submitted}
-        className={`w-full text-left px-4 py-3 rounded-xl text-xs font-semibold border transition ${style}`}
-      >
-        <span className="font-black mr-2">{letter}.</span>
-        {option}
-      </button>
-    );
-  }
-
   return (
-    <div className="w-full rounded-3xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] p-5 shadow-sm dark:shadow-none shadow-purple-50 space-y-5 select-none">
-      <div className="flex flex-col gap-3 border-b border-purple-50 dark:border-[#424242] pb-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-black uppercase tracking-widest text-[#6757ff] dark:text-[#10a37f]">
-            Interactive Quiz
-          </span>
-          <span className="text-xs font-semibold text-[#8a83a5] dark:text-[#b4b4b4]">
-            {submitted
-              ? `Score: ${score ?? 0}/${totalQuestions} (${percentage}%)`
-              : `Question ${currentQuestionIndex + 1} of ${totalQuestions} | Answered: ${answeredCount}/${totalQuestions}`}
-          </span>
-        </div>
-
-        {!submitted && (
-          <div className="flex flex-wrap gap-2">
-            {questions.map((_, index) => {
-              const answered = selectedAnswers[index] !== undefined;
-              const active = index === currentQuestionIndex;
-              const style = active
-                ? "bg-[#6757ff] dark:bg-[#10a37f] text-white border-[#6757ff] dark:border-[#10a37f]"
-                : answered
-                ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                : "bg-gray-50 dark:bg-[#2f2f2f] text-gray-500 dark:text-[#999999] border-gray-200 dark:border-[#424242]";
-
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => goToQuestion(index)}
-                  className={`h-8 w-8 rounded-lg border text-xs font-black transition ${style}`}
-                >
-                  {index + 1}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
+    <div className="w-full max-w-3xl mx-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-6 md:p-8 shadow-sm">
       {!submitted ? (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl border border-purple-50 dark:border-[#424242] bg-[#fffcf8] dark:bg-[#171717] space-y-3">
-            <h4 className="text-sm font-extrabold text-[#15132b] dark:text-[#ececec] leading-relaxed">
-              {currentQuestionIndex + 1}. {currentQuestion.question}
-            </h4>
-            <div className="grid gap-2">
-              {currentQuestion.options.map((option, optionIndex) =>
-                renderOption(currentQuestion, currentQuestionIndex, option, optionIndex)
-              )}
-            </div>
-          </div>
+        <AnimatePresence mode="wait">
+          <motion.div 
+            key={currentQuestionIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-8"
+          >
+            {/* Progress */}
+            <ProgressBar 
+              current={currentQuestionIndex + 1} 
+              total={totalQuestions} 
+              label="Question" 
+            />
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => goToQuestion(currentQuestionIndex - 1)}
-              disabled={currentQuestionIndex === 0}
-              className="px-4 py-2 rounded-xl border border-purple-100 dark:border-[#424242] text-xs font-black text-[#6757ff] dark:text-[#10a37f] disabled:opacity-40"
-            >
-              Previous
-            </button>
-            <div className="flex gap-2">
-              {currentQuestionIndex < totalQuestions - 1 && (
-                <button
-                  type="button"
-                  onClick={() => goToQuestion(currentQuestionIndex + 1)}
-                  className="px-4 py-2 rounded-xl border border-purple-100 dark:border-[#424242] text-xs font-black text-[#6757ff] dark:text-[#10a37f]"
-                >
-                  Next
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleSubmitClick}
-                disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl bg-[#6757ff] dark:bg-[#10a37f] text-white text-xs font-black shadow-sm dark:shadow-none shadow-purple-200 disabled:opacity-60"
-              >
-                {isSubmitting ? "Submitting..." : "Submit"}
-              </button>
-            </div>
-          </div>
+            {/* Question */}
+            <div className="space-y-6">
+              <h3 className="text-xl md:text-2xl font-medium text-[var(--theme-text-primary)] leading-relaxed">
+                {currentQuestion.question}
+              </h3>
+              
+              {/* Options */}
+              <div className="grid gap-3">
+                {currentQuestion.options.map((option, optionIndex) => {
+                  const letter = OPTION_LETTERS[optionIndex];
+                  const selectedLetter = selectedLetterFor(currentQuestion, selectedAnswers[currentQuestionIndex]);
+                  const isSelected = selectedLetter === letter;
 
-          {showSubmitConfirm && (
-            <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 space-y-3">
-              <p className="text-sm font-bold text-amber-900 dark:text-amber-400">
-                You have unanswered questions. Do you still want to submit?
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowSubmitConfirm(false)}
-                  className="px-4 py-2 rounded-xl bg-white dark:bg-[#2f2f2f] border border-amber-200 dark:border-amber-800/50 text-xs font-black text-amber-900 dark:text-amber-400"
-                >
-                  Continue Quiz
-                </button>
-                <button
-                  type="button"
-                  onClick={submitQuiz}
-                  className="px-4 py-2 rounded-xl bg-amber-600 dark:bg-[#10a37f] text-white dark:text-[#ececec] text-xs font-black"
-                >
-                  Submit Anyway
-                </button>
+                  return (
+                    <QuizOption
+                      key={letter}
+                      option={option}
+                      index={optionIndex}
+                      isSelected={isSelected}
+                      isCorrect={false}
+                      isWrong={false}
+                      onClick={() => chooseAnswer(currentQuestionIndex, letter)}
+                      disabled={false}
+                    />
+                  );
+                })}
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-6 mt-6 border-t border-[var(--theme-glass-border)]">
+              <button
+                type="button"
+                onClick={() => goToQuestion(currentQuestionIndex - 1)}
+                disabled={currentQuestionIndex === 0}
+                className="px-6 py-2.5 rounded-xl text-sm font-medium text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] disabled:opacity-30 transition-colors"
+              >
+                Previous
+              </button>
+              
+              <div className="flex gap-3">
+                {currentQuestionIndex < totalQuestions - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => goToQuestion(currentQuestionIndex + 1)}
+                    className="px-6 py-2.5 rounded-xl border border-[var(--theme-glass-border)] text-sm font-medium text-[var(--theme-text-primary)] hover:border-[var(--color-border-hover)] transition-colors shadow-sm"
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSubmitClick}
+                    disabled={isSubmitting}
+                    className="px-8 py-2.5 rounded-xl bg-[var(--color-primary-500)] text-white text-sm font-medium hover:bg-[var(--color-primary-600)] disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Quiz"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Confirm Submit Dialog */}
+            {showSubmitConfirm && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 rounded-xl border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] space-y-4"
+              >
+                <p className="text-sm font-medium text-[var(--color-warning-text)]">
+                  You have {totalQuestions - answeredCount} unanswered questions. Submit anyway?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowSubmitConfirm(false)}
+                    className="px-4 py-2 rounded-lg bg-[var(--theme-bg-secondary)] border border-[var(--color-warning-border)] text-sm font-medium text-[var(--theme-text-primary)]"
+                  >
+                    Continue Quiz
+                  </button>
+                  <button
+                    type="button"
+                    onClick={submitQuiz}
+                    className="px-4 py-2 rounded-lg bg-[var(--color-warning-text)] text-[var(--theme-bg-primary)] text-sm font-medium"
+                  >
+                    Submit Anyway
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       ) : (
         <QuizReview 
           quiz={{ questions }}
