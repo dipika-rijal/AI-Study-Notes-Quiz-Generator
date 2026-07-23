@@ -39,6 +39,12 @@ const quizAttemptSchema = new mongoose.Schema(
       type: String,
       enum: ["in_progress", "completed"],
       default: "completed"
+    },
+    userId: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true
     }
   },
   { timestamps: true }

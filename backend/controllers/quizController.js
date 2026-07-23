@@ -362,7 +362,7 @@ async function callGroqForQuiz(messages) {
 
 async function getQuizzes(req, res, next) {
   try {
-    const quizzes = await Quiz.find().sort({ createdAt: -1 });
+    const quizzes = await Quiz.find({ userId: req.user.uid }).sort({ createdAt: -1 });
     res.json({ success: true, total: quizzes.length, quizzes: quizzes });
   } catch (error) {
     next(error);
@@ -371,7 +371,7 @@ async function getQuizzes(req, res, next) {
 
 async function getQuizById(req, res, next) {
   try {
-    const quiz = await Quiz.findById(req.params.id);
+    const quiz = await Quiz.findOne({ _id: req.params.id, userId: req.user.uid });
 
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
@@ -392,7 +392,7 @@ async function getQuizById(req, res, next) {
 
 async function createQuiz(req, res, next) {
   try {
-    const quiz = await Quiz.create(req.body);
+    const quiz = await Quiz.create({ ...req.body, userId: req.user.uid });
     res.status(201).json({ success: true, message: "Quiz created", quiz: quiz });
   } catch (error) {
     next(error);
@@ -430,7 +430,7 @@ async function generateQuiz(req, res, next) {
     const generatedQuestions = await generateWithRetry(prompt);
 
     const quiz = await Quiz.create({
-      userId: req.body.userId || "anonymous",
+      userId: req.user.uid,
       topic: prompt.topic,
       content: String(req.body.content || "").slice(0, 12000),
       sourceType: prompt.sourceType,
@@ -456,7 +456,7 @@ async function retryQuiz(req, res, next) {
     const generatedQuestions = await generateWithRetry(prompt);
 
     const quiz = await Quiz.create({
-      userId: req.body.userId || "anonymous",
+      userId: req.user.uid,
       topic: prompt.topic,
       content: "Retry incorrect questions",
       sourceType: "topic",
@@ -492,7 +492,7 @@ async function checkAnswer(req, res, next) {
       });
     }
 
-    const quiz = await Quiz.findById(quizId);
+    const quiz = await Quiz.findOne({ _id: quizId, userId: req.user.uid });
 
     if (!quiz || !quiz.questions[questionIndex]) {
       return res.status(404).json({ success: false, message: "Quiz question not found" });
@@ -515,10 +515,11 @@ async function checkAnswer(req, res, next) {
 
 async function updateQuiz(req, res, next) {
   try {
-    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.uid },
+      req.body,
+      { new: true, runValidators: true }
+    );
 
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
@@ -532,13 +533,13 @@ async function updateQuiz(req, res, next) {
 
 async function deleteQuiz(req, res, next) {
   try {
-    const quiz = await Quiz.findByIdAndDelete(req.params.id);
+    const quiz = await Quiz.findOneAndDelete({ _id: req.params.id, userId: req.user.uid });
 
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
     }
 
-    await QuizAttempt.deleteMany({ quizId: req.params.id });
+    await QuizAttempt.deleteMany({ quizId: req.params.id, userId: req.user.uid });
 
     res.json({ success: true, message: "Quiz deleted" });
   } catch (error) {

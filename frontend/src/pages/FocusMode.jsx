@@ -1,18 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import CircularTimer from '../components/ui/CircularTimer';
+import {
+  getActiveAmbientSound,
+  playAmbientSound,
+  stopAmbientSound as stopSharedAmbientSound,
+} from '../lib/ambientAudio';
 
 export default function FocusMode() {
   const [isActive, setIsActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes
-  const [selectedSound, setSelectedSound] = useState('none');
+  const [selectedSound, setSelectedSound] = useState(getActiveAmbientSound);
+  const [isSoundPlaying, setIsSoundPlaying] = useState(() => getActiveAmbientSound() !== 'none');
+  const completionPlayedRef = useRef(false);
+
+  const playEffect = (file) => {
+    const audio = new Audio(`/sounds/${file}`);
+    audio.volume = 0.55;
+    audio.play().catch(() => {});
+  };
 
   const sounds = [
     { id: 'none', label: 'None', icon: '🔇' },
-    { id: 'rain', label: 'Rain', icon: '🌧️' },
-    { id: 'forest', label: 'Forest', icon: '🌲' },
-    { id: 'noise', label: 'White Noise', icon: '〰️' },
+    { id: 'rain', label: 'Rain', icon: '🌧️', file: 'rain.mp3' },
+    { id: 'waves', label: 'Waves', icon: '🌊', file: 'waves.mp3' },
+    { id: 'fire', label: 'Fire', icon: '🔥', file: 'fire.mp3' },
   ];
+
+  const stopAmbientSound = () => {
+    stopSharedAmbientSound();
+    setIsSoundPlaying(false);
+    setSelectedSound('none');
+  };
+
+  const selectAmbientSound = async (sound) => {
+    if (!sound.file) {
+      stopAmbientSound();
+      return;
+    }
+
+    setSelectedSound(sound.id);
+    setIsSoundPlaying(await playAmbientSound(sound));
+  };
 
   useEffect(() => {
     let interval = null;
@@ -22,14 +51,22 @@ export default function FocusMode() {
       }, 1000);
     } else if (timeLeft === 0) {
       setIsActive(false);
+      if (!completionPlayedRef.current) {
+        completionPlayedRef.current = true;
+        playEffect('complete.mp3');
+      }
     }
     return () => clearInterval(interval);
   }, [isActive, timeLeft]);
 
-  const toggleTimer = () => setIsActive(!isActive);
+  const toggleTimer = () => {
+    if (!isActive && timeLeft > 0) playEffect('notification.mp3');
+    setIsActive(!isActive);
+  };
   const resetTimer = () => {
     setIsActive(false);
     setTimeLeft(25 * 60);
+    completionPlayedRef.current = false;
   };
 
   const formatTime = (seconds) => {
@@ -113,7 +150,7 @@ export default function FocusMode() {
               {sounds.map(sound => (
                 <button
                   key={sound.id}
-                  onClick={() => setSelectedSound(sound.id)}
+                  onClick={() => selectAmbientSound(sound)}
                   className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all duration-300 ${
                     selectedSound === sound.id
                       ? 'bg-[var(--theme-bg-tertiary)] border border-[var(--color-primary-500)] text-[var(--color-primary-500)] shadow-sm'
@@ -126,6 +163,20 @@ export default function FocusMode() {
                 </button>
               ))}
             </div>
+            {selectedSound !== 'none' && (
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <span className="text-xs text-[var(--theme-text-secondary)]">
+                  {isSoundPlaying ? 'Playing in a loop' : 'Sound is paused'}
+                </span>
+                <button
+                  type="button"
+                  onClick={stopAmbientSound}
+                  className="rounded-lg border border-[var(--theme-glass-border)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text-secondary)] transition-colors hover:border-red-400 hover:text-red-500"
+                >
+                  Stop sound
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

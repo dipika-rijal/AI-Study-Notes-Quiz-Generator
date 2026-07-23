@@ -1,16 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Camera, Save } from 'lucide-react';
 
 export default function EditProfileModal({ isOpen, onClose, user, onSave }) {
   const [displayName, setDisplayName] = useState('');
   const [studyFocus, setStudyFocus] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || user.email?.split('@')[0] || '');
       setStudyFocus(user.studyFocus || '');
+      setAvatarPreview(user.photoURL || '');
+      setAvatarFile(null);
+      setSaveError('');
     }
   }, [user, isOpen]);
 
@@ -22,14 +29,30 @@ export default function EditProfileModal({ isOpen, onClose, user, onSave }) {
       // Pass the updated details up to parent/handler.
       // Firebase logic should be injected via onSave prop for clean separation.
       if (onSave) {
-        await onSave({ displayName, studyFocus });
+        await onSave({ displayName, studyFocus, avatarFile });
       }
       onClose();
     } catch (error) {
-      console.error("Failed to update profile", error);
+      setSaveError(error?.message || 'We could not save your profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAvatarChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setSaveError('Choose an image file for your profile photo.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setSaveError('Choose an image smaller than 2 MB.');
+      return;
+    }
+    setSaveError('');
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const modalVariants = {
@@ -92,18 +115,16 @@ export default function EditProfileModal({ isOpen, onClose, user, onSave }) {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Avatar Edit */}
               <div className="flex flex-col items-center gap-4">
-                <div className="relative group cursor-pointer">
-                  <div className="grid h-20 w-20 place-items-center rounded-2xl bg-[var(--color-primary-500)] text-2xl font-bold text-white shadow-inner transition-transform group-hover:scale-105">
-                    {displayName.slice(0, 2).toUpperCase() || 'ST'}
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera size={24} className="text-white" />
-                  </div>
-                </div>
-                <p className="text-xs font-medium text-[var(--color-primary-600)]">
-                  Avatar upload is ready for profile storage integration
-                </p>
+                <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarChange} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="relative group overflow-hidden rounded-2xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary-500)]">
+                  {avatarPreview ? <img src={avatarPreview} alt="Profile preview" className="h-20 w-20 object-cover" /> : <span className="grid h-20 w-20 place-items-center bg-[var(--color-primary-500)] text-2xl font-bold text-white shadow-inner transition-transform group-hover:scale-105">{displayName.slice(0, 2).toUpperCase() || 'ST'}</span>}
+                  <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-white opacity-0 transition-opacity group-hover:opacity-100"><Camera size={22} /></span>
+                </button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="text-xs font-medium text-[var(--color-primary-600)] hover:underline">Upload profile photo</button>
+                <p className="-mt-2 text-[10px] text-[var(--theme-text-muted)]">PNG, JPG, or WebP · up to 2 MB</p>
               </div>
+
+              {saveError && <p role="alert" className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">{saveError}</p>}
 
               {/* Form Fields */}
               <div className="space-y-4">

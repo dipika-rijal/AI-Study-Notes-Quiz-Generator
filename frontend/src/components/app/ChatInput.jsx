@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import pdfToText from "react-pdftotext";
+import AttachmentMenu from './AttachmentMenu';
 
 /**
  * Sticky input box with auto-growing textarea and attachment button.
@@ -23,6 +24,8 @@ export default function ChatInput({
   const [inputValue, setInputValue] = useState("");
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
 
   // Auto-grow textarea height on value change
   useEffect(() => {
@@ -71,6 +74,12 @@ export default function ChatInput({
       return;
     }
 
+    if (file.type.startsWith("image/")) {
+      setErrorMessage("Please use the Upload Image option for images.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     if (cleanName.endsWith(".pdf")) {
       setLoadingState("extracting");
       try {
@@ -92,7 +101,7 @@ export default function ChatInput({
       } finally {
         setLoadingState("none");
       }
-    } else if (cleanName.endsWith(".txt") || cleanName.endsWith(".md")) {
+    } else {
       setLoadingState("uploading");
       try {
         const reader = new FileReader();
@@ -102,17 +111,15 @@ export default function ChatInput({
           setLoadingState("none");
         };
         reader.onerror = () => {
-          setErrorMessage("Failed to read text file.");
+          setErrorMessage("Failed to read file.");
           setLoadingState("none");
         };
         reader.readAsText(file);
       } catch (err) {
         console.error(err);
-        setErrorMessage("An error occurred reading the text file.");
+        setErrorMessage("An error occurred reading the file.");
         setLoadingState("none");
       }
-    } else {
-      setErrorMessage("Unsupported file type. Please upload a .pdf, .txt, or .md file.");
     }
 
     // Reset file input value to allow uploading the same file again
@@ -123,26 +130,38 @@ export default function ChatInput({
 
   const isInputLoading = loadingState !== "none" && loadingState !== "saving" && loadingState !== "downloading";
 
+  const handleAttachmentSelect = (action) => {
+    setIsAttachmentMenuOpen(false);
+    if (action === 'file') fileInputRef.current?.click();
+    if (action === 'image') imageInputRef.current?.click();
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files?.[0]) setErrorMessage('Image analysis is not enabled by the current AI API. Please add a note or upload a PDF.');
+    e.target.value = '';
+  };
+
   return (
     <div className="w-full">
-      <form onSubmit={handleSubmit} className="relative flex items-end gap-2 rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-2 transition focus-within:border-[var(--color-primary-500)]">
+      <form onSubmit={handleSubmit} className="relative flex items-end gap-2 rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-2 shadow-lg shadow-black/[0.03] transition focus-within:border-[var(--color-primary-500)] focus-within:ring-4 focus-within:ring-[var(--color-primary-500)]/10">
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.txt,.md"
           onChange={handleFileChange}
           className="hidden"
           disabled={disabled || isInputLoading}
         />
+        <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" disabled={disabled || isInputLoading} />
+        {isAttachmentMenuOpen && <AttachmentMenu onSelect={handleAttachmentSelect} disabled={disabled || isInputLoading} />}
 
         {/* Attachment Button */}
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => setIsAttachmentMenuOpen((open) => !open)}
           disabled={disabled || isInputLoading}
-          aria-label="Upload document (PDF, TXT, or MD)"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-secondary)] transition hover:text-[var(--theme-text-primary)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Add an attachment"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-transparent transition before:absolute before:text-2xl before:font-light before:leading-none before:text-[var(--theme-text-secondary)] before:content-['+'] hover:before:text-[var(--theme-text-primary)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           📎
         </button>
@@ -169,7 +188,7 @@ export default function ChatInput({
           type="submit"
           disabled={disabled || isInputLoading || !inputValue.trim()}
           aria-label="Send message"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-primary-500)] text-white transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary-500)] text-transparent transition after:absolute after:text-lg after:font-semibold after:leading-none after:text-white after:content-['↑'] hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           ✦
         </button>

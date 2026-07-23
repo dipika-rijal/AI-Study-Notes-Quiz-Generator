@@ -41,12 +41,6 @@ export default function StartModal({
           text: "Create notes from your own study material.",
           type: "content",
         },
-        {
-          icon: "🎥",
-          title: "Paste video link",
-          text: "Create notes from a video link and topic details.",
-          type: "video",
-        },
       ];
 
   function handleCardClick(cardType) {
@@ -87,7 +81,7 @@ export default function StartModal({
 
       <div
         className={`mt-8 grid grid-cols-1 gap-4 ${
-          isQuiz ? "md:grid-cols-2" : "md:grid-cols-3"
+          "md:grid-cols-2"
         }`}
       >
         {cards.map((card) => (

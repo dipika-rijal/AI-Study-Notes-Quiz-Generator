@@ -20,7 +20,7 @@ const messageSchema = new mongoose.Schema(
 const conversationSchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
-    userId: { type: String, default: "anonymous", trim: true },
+    userId: { type: String, required: true, trim: true, index: true },
     title: { type: String, default: "New Chat", trim: true },
     topic: { type: String, default: "" },
     summary: { type: String, default: "" },

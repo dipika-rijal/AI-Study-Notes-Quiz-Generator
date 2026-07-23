@@ -10,9 +10,8 @@ const API_BASE_URL = (
 ).replace(/\/api\/?$/, "");
 
 const SOURCE_OPTIONS = [
-  { value: "topic", label: "Enter a topic" },
-  { value: "pdf", label: "Upload PDF/document" },
-  { value: "notes", label: "Use previous generated notes/history" }
+  { value: "file", label: "Upload Files" },
+  { value: "image", label: "Upload Image" }
 ];
 
 const QUESTION_COUNT_OPTIONS = [5, 10, 15, 20];
@@ -240,14 +239,13 @@ export default function CreateQuiz() {
     setSourceType(value);
     appendMessage(createMessage("user", SOURCE_OPTIONS.find((item) => item.value === value)?.label || value));
 
-    if (value === "topic") {
-      setStep("waitingForTopic");
-      appendMessage(createMessage("assistant", "What topic should the quiz cover?"));
-    } else if (value === "pdf") {
+    if (value === "file") {
       setStep("waitingForUpload");
-      appendMessage(createMessage("assistant", "Upload a PDF, text, or Markdown document for the quiz."));
-    } else if (value === "notes") {
-      await loadHistoryNotes();
+      appendMessage(createMessage("assistant", "Upload a document for the quiz."));
+    } else if (value === "image") {
+      setErrorMessage('Image analysis is not enabled by the current AI API. Please upload a file.');
+      setStep("chooseSource");
+      setSourceType("");
     }
   }
 
@@ -276,6 +274,12 @@ export default function CreateQuiz() {
     setErrorMessage("");
     appendMessage(createMessage("user", `Uploaded ${file.name}`));
 
+    if (file.type.startsWith("image/")) {
+      setErrorMessage("Please use the Upload Image option for images.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     try {
       let text = "";
       const lowerName = file.name.toLowerCase();
@@ -285,10 +289,8 @@ export default function CreateQuiz() {
         if (!text || !text.trim()) {
           throw new Error("This PDF appears scanned or image-based. OCR/text extraction is required before quiz generation.");
         }
-      } else if (lowerName.endsWith(".txt") || lowerName.endsWith(".md")) {
-        text = await file.text();
       } else {
-        throw new Error("Please upload a PDF, TXT, or Markdown document.");
+        text = await file.text();
       }
 
       setTopic(file.name.replace(/\.[^.]+$/, ""));
@@ -536,18 +538,18 @@ export default function CreateQuiz() {
   const weakAreas = quiz ? getWeakAreas(quiz.questions, answers, topic) : [];
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col bg-transparent">
-      <header className="mb-4 flex items-center justify-between border-b border-orange-100/60 dark:border-[#424242] pb-4">
+    <div className="mx-auto flex h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
+      <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-5">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#fff0d0] dark:bg-[#171717] dark:border dark:border-[#424242] text-xl text-orange-500 dark:text-[#10a37f] shadow-md shadow-orange-100 dark:shadow-none">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary-500)] text-xl text-white shadow-md">
             Q
           </div>
           <div>
             <h1 className="text-xl font-black tracking-tight text-[#15132b] dark:text-[#ececec]">
-              Interactive AI Quiz
+              Quiz Assistant
             </h1>
             <p className="text-xs font-semibold text-[#9a93b3] dark:text-[#999999]">
-              Create, answer, review, and save quiz practice.
+              Create focused practice from a topic, file, or saved notes.
             </p>
           </div>
         </div>
@@ -561,7 +563,7 @@ export default function CreateQuiz() {
         </button>
       </header>
 
-      <main className="mb-4 flex-1 overflow-y-auto rounded-[32px] border border-orange-100 dark:border-[#424242] bg-white/70 dark:bg-[#171717] p-5 shadow-xl shadow-orange-100/40 dark:shadow-none">
+      <main className="mb-4 flex-1 overflow-y-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 shadow-sm md:p-6">
         <div className="mx-auto max-w-[900px] space-y-5">
           {messages.map((message) => {
             const isUser = message.role === "user";
@@ -569,8 +571,8 @@ export default function CreateQuiz() {
               <div key={message.id} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 text-sm font-semibold leading-relaxed shadow-sm dark:shadow-none ${
                   isUser
-                    ? "rounded-tr-sm bg-orange-500 dark:bg-[#10a37f] text-white"
-                    : "rounded-tl-sm border border-orange-50 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] text-[#15132b] dark:text-[#ececec]"
+                    ? "rounded-tr-sm bg-[var(--color-primary-500)] text-white"
+                    : "rounded-tl-sm border border-[var(--theme-glass-border)] bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)]"
                 }`}>
                   <p className="whitespace-pre-line">{message.content}</p>
                   {message.options?.length > 0 && (
@@ -581,7 +583,7 @@ export default function CreateQuiz() {
                           type="button"
                           onClick={() => handleOptionSelect(option.value)}
                           disabled={isGenerating || isChecking}
-                          className="rounded-2xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#171717] px-4 py-2.5 text-xs font-black text-orange-500 dark:text-[#10a37f] shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:border-orange-300 dark:hover:border-[#10a37f] hover:bg-[#fff5ec] dark:hover:bg-[#2f2f2f] disabled:opacity-50"
+                          className="rounded-full border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-4 py-2.5 text-xs font-semibold text-[var(--color-primary-500)] shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--color-primary-500)] hover:bg-[var(--theme-bg-tertiary)] disabled:opacity-50"
                         >
                           {option.label}
                         </button>
@@ -599,7 +601,6 @@ export default function CreateQuiz() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.txt,.md,text/plain,text/markdown"
                   onChange={handleFileChange}
                   className="hidden"
                 />

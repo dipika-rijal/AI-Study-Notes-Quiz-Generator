@@ -79,8 +79,9 @@ const quizSchema = new mongoose.Schema(
     },
     userId: {
       type: String,
-      default: "anonymous",
+      required: true,
       trim: true,
+      index: true,
     },
     totalQuestions: {
       type: Number,

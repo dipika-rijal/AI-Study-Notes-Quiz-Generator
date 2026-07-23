@@ -1,11 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useConversationFlow } from "../../hooks/useConversationFlow";
-import ChatMessage from "./ChatMessage";
+import ChatMessage from "./MessageBubble";
 import ChatInput from "./ChatInput";
-import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
-import AINeuralCore from "../ai/AINeuralCore";
+import { Sparkles } from 'lucide-react';
 
 /**
  * Main Chat Container for the Conversational Note Assistant.
@@ -43,27 +41,14 @@ export default function ChatPage() {
     loadSavedNoteById
   });
 
-  const [showCore, setShowCore] = useState(false);
-  const [coreSuccess, setCoreSuccess] = useState(false);
-
-  useEffect(() => {
-    if (loadingState !== "none" && loadingState !== "generating") {
-      setShowCore(true);
-      setCoreSuccess(false);
-    } else if (showCore && loadingState === "none") {
-      // Finished loading, show success memory visualization
-      setCoreSuccess(true);
-      const timer = setTimeout(() => {
-        setShowCore(false);
-        setCoreSuccess(false);
-      }, 3000); // Wait 3 seconds to show knowledge added
-      return () => clearTimeout(timer);
-    }
-  }, [loadingState, showCore]);
-
   // Automatically scroll to the bottom of the message container on new updates
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Streaming updates arrive many times per second. Smooth-scrolling each
+    // partial update creates a visible jumpy animation, so only animate once
+    // the response is complete.
+    messagesEndRef.current?.scrollIntoView({
+      behavior: loadingState === "generating" ? "auto" : "smooth"
+    });
   };
 
   useEffect(() => {
@@ -73,19 +58,20 @@ export default function ChatPage() {
   const isGenerating = conversationStep === "generating";
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] flex-col bg-transparent">
+    <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col bg-transparent">
       {/* Chat header area */}
-      <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-4 select-none">
+      <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-5 select-none">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-xl text-[var(--color-primary-600)]">
             ✦
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-[-0.025em] text-[var(--theme-text-primary)]">
-              AI Study Assistant
+            <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-primary-500)]"><Sparkles size={12} /> StudyGen AI</p>
+            <h1 className="text-xl font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
+              Study Assistant
             </h1>
-            <p className="text-xs text-[var(--theme-text-secondary)]">
-              Generate, summarize, quiz, or learn anything.
+            <p className="mt-1 text-sm text-[var(--theme-text-secondary)]">
+              Turn study material into clear notes, quizzes, and explanations.
             </p>
           </div>
         </div>
@@ -100,19 +86,10 @@ export default function ChatPage() {
         </button>
       </header>
 
-      <AnimatePresence>
-        {showCore && (
-          <AINeuralCore
-            loadingState={loadingState === "none" ? "success" : loadingState}
-            isSuccess={coreSuccess}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Main Conversation viewport */}
       <main
         ref={scrollContainerRef}
-        className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-5 md:p-6"
+        className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 md:p-6"
       >
         <div className="mx-auto max-w-[900px] space-y-5">
           {messages.map((message) => (

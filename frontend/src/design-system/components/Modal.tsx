@@ -138,16 +138,15 @@ export const Modal: React.FC<ModalProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 200 }}
+            transition={{ duration: 0.12 }}
             onClick={closeOnOverlayClick ? onClose : undefined}
-          />
-          <div style={overlayStyle} onClick={closeOnOverlayClick ? onClose : undefined}>
+          >
             <motion.div
               style={modalStyle}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 200, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
               onClick={(e) => e.stopPropagation()}
             >
               {(title || showCloseButton) && (
@@ -171,7 +170,7 @@ export const Modal: React.FC<ModalProps> = ({
               )}
               <div style={contentStyle}>{children}</div>
             </motion.div>
-          </div>
+          </motion.div>
         </>
       )}
     </AnimatePresence>
