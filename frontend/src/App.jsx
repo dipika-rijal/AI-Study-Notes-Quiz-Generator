@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./config/firebase";
+import { getStoredStudyFocus, saveProfile } from './services/profile';
+import { LandingThemeProvider, AppThemeProvider } from './theme/ThemeProviders';
 
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
@@ -57,6 +59,8 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) setProfileDetails({ studyFocus: getStoredStudyFocus(currentUser.uid) });
+      else setProfileDetails({});
       setAuthReady(true);
     });
 
@@ -65,6 +69,11 @@ export default function App() {
 
   async function handleLogout() {
     await signOut(auth);
+  }
+
+  async function handleProfileSave(details) {
+    const savedProfile = await saveProfile(user, details);
+    setProfileDetails(savedProfile);
   }
 
   const workspaceUser = user ? { ...user, ...profileDetails } : user;
@@ -89,10 +98,12 @@ export default function App() {
           path="/"
           element={
             <GuestRoute user={user}>
-              <LandingPage
-                setModalType={setModalType}
-                setAuthMode={setAuthMode}
-              />
+              <LandingThemeProvider>
+                <LandingPage
+                  setModalType={setModalType}
+                  setAuthMode={setAuthMode}
+                />
+              </LandingThemeProvider>
             </GuestRoute>
           }
         />
@@ -101,10 +112,12 @@ export default function App() {
           path="/app"
           element={
             <ProtectedRoute user={user}>
-              <AppLayout
-                user={workspaceUser}
-                logout={handleLogout}
-              />
+              <AppThemeProvider>
+                <AppLayout
+                  user={workspaceUser}
+                  logout={handleLogout}
+                />
+              </AppThemeProvider>
             </ProtectedRoute>
           }
         >
@@ -125,27 +138,30 @@ export default function App() {
         />
       </Routes>
 
-      <StartModal
-        modalType={modalType}
-        user={user}
-        closeModal={() => setModalType(null)}
-        openAuthModal={setAuthMode}
-      />
+      <LandingThemeProvider noStyles>
+        <StartModal
+          modalType={modalType}
+          user={user}
+          closeModal={() => setModalType(null)}
+          openAuthModal={setAuthMode}
+        />
 
-      <AuthModal
-        authMode={authMode}
-        closeAuthModal={() => setAuthMode(null)}
-      />
+        <AuthModal
+          authMode={authMode}
+          closeAuthModal={() => setAuthMode(null)}
+        />
+      </LandingThemeProvider>
 
-      <EditProfileModal
-        isOpen={isProfileEditorOpen}
-        onClose={() => setIsProfileEditorOpen(false)}
-        user={workspaceUser}
-        onSave={(details) => {
-          // Kept local intentionally: connect this seam to Firebase/profile APIs when available.
-          setProfileDetails((current) => ({ ...current, ...details }));
-        }}
-      />
+      {authReady && (
+        <AppThemeProvider noStyles>
+          <EditProfileModal
+            isOpen={isProfileEditorOpen}
+            onClose={() => setIsProfileEditorOpen(false)}
+            user={workspaceUser}
+            onSave={handleProfileSave}
+          />
+        </AppThemeProvider>
+      )}
     </>
   );
 }

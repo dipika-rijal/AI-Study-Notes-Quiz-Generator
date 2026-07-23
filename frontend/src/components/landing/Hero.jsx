@@ -30,9 +30,6 @@ export default function Hero({ openModal }) {
           <Badge variant="secondary" size="sm">
             ☘ Paste Content
           </Badge>
-          <Badge variant="warning" size="sm">
-            ⌁ Video Link
-          </Badge>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-4">

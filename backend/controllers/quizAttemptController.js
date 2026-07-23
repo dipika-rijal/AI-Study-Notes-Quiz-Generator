@@ -3,7 +3,7 @@ const QuizAttempt = require("../models/QuizAttempt.js");
 
 async function getQuizAttempts(req, res, next) {
   try {
-    const attempts = await QuizAttempt.find()
+    const attempts = await QuizAttempt.find({ userId: req.user.uid })
       .sort({ createdAt: -1 })
       .populate("quizId", "topic difficulty");
 
@@ -96,7 +96,8 @@ async function createQuizAttempt(req, res, next) {
       correctAnswers: correctAnswers,
       feedback: feedback,
       score: score,
-      status: req.body.status || "completed"
+      status: req.body.status || "completed",
+      userId: req.user.uid
     });
 
     res.status(201).json({
@@ -118,8 +119,8 @@ async function updateQuizAttempt(req, res, next) {
       if (!req.body.topic.trim()) {
         return res.status(400).json({ success: false, message: "Topic is required" });
       }
-      const attempt = await QuizAttempt.findByIdAndUpdate(
-        id,
+      const attempt = await QuizAttempt.findOneAndUpdate(
+        { _id: id, userId: req.user.uid },
         { topic: req.body.topic.trim() },
         { new: true, runValidators: true }
       );
@@ -138,7 +139,7 @@ async function updateQuizAttempt(req, res, next) {
       });
     }
 
-    const attempt = await QuizAttempt.findById(id);
+    const attempt = await QuizAttempt.findOne({ _id: id, userId: req.user.uid });
     if (!attempt) {
       return res.status(404).json({ success: false, message: "Attempt not found" });
     }
@@ -224,7 +225,7 @@ async function updateQuizAttempt(req, res, next) {
 
 async function deleteQuizAttempt(req, res, next) {
   try {
-    const attempt = await QuizAttempt.findByIdAndDelete(req.params.id);
+    const attempt = await QuizAttempt.findOneAndDelete({ _id: req.params.id, userId: req.user.uid });
     if (!attempt) {
       return res.status(404).json({ success: false, message: "Attempt not found" });
     }

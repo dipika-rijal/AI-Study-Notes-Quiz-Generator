@@ -32,6 +32,12 @@ const noteSchema = new mongoose.Schema(
     tags: {
       type: [String],
       default: []
+    },
+    userId: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true
     }
   },
   { timestamps: true }

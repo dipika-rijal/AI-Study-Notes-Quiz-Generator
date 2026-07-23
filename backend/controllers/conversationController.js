@@ -6,7 +6,7 @@ async function saveConversation(req, res, next) {
     const { id } = req.params;
     const { messages, title, topic, summary } = req.body;
 
-    let conversation = await Conversation.findById(id);
+    let conversation = await Conversation.findOne({ _id: id, userId: req.user.uid });
 
     if (conversation) {
       if (messages) conversation.messages = messages;
@@ -20,7 +20,8 @@ async function saveConversation(req, res, next) {
         messages: messages || [],
         title: title || "New Chat",
         topic: topic || "",
-        summary: summary || ""
+        summary: summary || "",
+        userId: req.user.uid
       });
     }
 
@@ -34,7 +35,7 @@ async function saveConversation(req, res, next) {
 async function getConversation(req, res, next) {
   try {
     const { id } = req.params;
-    const conversation = await Conversation.findById(id).lean();
+    const conversation = await Conversation.findOne({ _id: id, userId: req.user.uid }).lean();
 
     if (!conversation) {
       return res.status(404).json({ success: false, message: "Conversation not found" });
@@ -50,7 +51,7 @@ async function getConversation(req, res, next) {
 async function deleteConversation(req, res, next) {
   try {
     const { id } = req.params;
-    const deleted = await Conversation.findByIdAndDelete(id);
+    const deleted = await Conversation.findOneAndDelete({ _id: id, userId: req.user.uid });
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: "Conversation not found" });
@@ -66,7 +67,7 @@ async function deleteConversation(req, res, next) {
 async function getConversations(req, res, next) {
   try {
     const limit = Number(req.query.limit) || 50;
-    const conversations = await Conversation.find()
+    const conversations = await Conversation.find({ userId: req.user.uid })
       .sort({ updatedAt: -1 })
       .limit(limit)
       .lean();

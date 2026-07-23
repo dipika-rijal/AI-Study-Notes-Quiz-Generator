@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { BookOpen, BrainCircuit, Clock3, Home, Layers3, LogOut, Sparkles } from 'lucide-react';
 
 const navigation = [
@@ -12,7 +13,7 @@ export default function Sidebar({ user, logout }) {
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Student';
   const initials = displayName.slice(0, 2).toUpperCase();
   return (
-    <aside className="sticky top-0 hidden h-screen w-[252px] shrink-0 flex-col border-r border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-4 lg:flex">
+    <motion.aside initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22, ease: 'easeOut' }} className="sticky top-0 hidden h-screen w-[252px] shrink-0 flex-col border-r border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-4 lg:flex">
       <NavLink to="/app" end className="mb-7 flex items-center gap-3 rounded-xl px-3 py-2">
         <span className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-[var(--color-primary-600)]">
           <Layers3 size={17} strokeWidth={2.25} />
@@ -47,14 +48,14 @@ export default function Sidebar({ user, logout }) {
 
       <div className="space-y-1 border-t border-[var(--theme-glass-border)] pt-3">
         <NavLink to="/app/settings" className="flex items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-[var(--theme-surface-hover)]">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-primary-500)] text-xs font-semibold text-white">{initials}</span>
+          {user?.photoURL ? <img src={user.photoURL} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-primary-500)] text-xs font-semibold text-white">{initials}</span>}
           <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--theme-text-primary)]">{displayName}</span><span className="block truncate text-xs text-[var(--theme-text-muted)]">Personal workspace</span></span>
         </NavLink>
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] transition-colors hover:bg-red-500/10 hover:text-red-400">
+        <motion.button whileTap={{ scale: 0.98 }} onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] transition-colors hover:bg-red-500/10 hover:text-red-400">
           <LogOut size={17} strokeWidth={1.8} />
           Sign out
-        </button>
+        </motion.button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

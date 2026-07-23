@@ -15,9 +15,9 @@ export default function Features() {
       iconStyle: "bg-[#fff0d0] text-orange-500",
     },
     {
-      icon: "▶",
-      title: "Video Friendly",
-      text: "Start from a video link or pasted content.",
+      icon: "✦",
+      title: "Study Ready",
+      text: "Turn your material into notes and quizzes made for revision.",
       style: "from-white to-[#edfff6]",
       iconStyle: "bg-[#d9f7e8] text-emerald-600",
     },

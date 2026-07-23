@@ -1,10 +1,17 @@
 import { useContext } from 'react';
-import { ThemeContext } from '../theme';
+import { AppThemeContext } from '../theme/ThemeProviders';
 
 export const useTheme = () => {
-  const context = useContext(ThemeContext);
+  const context = useContext(AppThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error('useTheme must be used within an AppThemeProvider');
   }
-  return context;
+  
+  // Expose toggleTheme for backward compatibility in components
+  return {
+    ...context,
+    toggleTheme: () => {
+      context.setTheme(context.theme === 'dark' ? 'light' : 'dark');
+    }
+  };
 };

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { Copy, RotateCcw } from 'lucide-react';
 import MarkdownRenderer from "./MarkdownRenderer";
 import SuggestionChips from "./SuggestionChips";
 import NotesCard from "./NotesCard";
@@ -30,10 +31,11 @@ export default function ChatMessage({
 }) {
   const { role, content, type, options, data, title, category, saved, dbNoteId } = message;
   const isUser = role === "user";
+  const shouldReduceMotion = useReducedMotion();
 
   const containerVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 12 },
+    visible: { opacity: 1, y: 0, transition: { duration: shouldReduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] } }
   };
 
   return (
@@ -45,7 +47,7 @@ export default function ChatMessage({
     >
       {/* AI Avatar */}
       {!isUser && (
-        <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--color-primary-500)] text-base text-white">
+        <div className="hidden h-8 w-8 shrink-0 select-none items-center justify-center rounded-lg bg-[var(--color-primary-500)] text-base text-white">
           ✦
         </div>
       )}
@@ -102,9 +104,18 @@ export default function ChatMessage({
               </div>
             ) : isUser ? (
               <p className="whitespace-pre-line">{content}</p>
+            ) : message.id === "greeting" ? (
+              <p className="text-[15px] font-medium leading-7">What would you like to study today? Choose an option below, or write your own request.</p>
             ) : (
               <MarkdownRenderer content={content} />
             )}
+          </div>
+        )}
+
+        {!isUser && type !== "loading" && type !== "options" && (
+          <div className="mt-2 flex items-center gap-1">
+            <button type="button" onClick={() => navigator.clipboard?.writeText(content)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)]"><Copy size={12} /> Copy</button>
+            <button type="button" onClick={onRegenerate} disabled={isGenerating} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] disabled:opacity-40"><RotateCcw size={12} /> Retry</button>
           </div>
         )}
 

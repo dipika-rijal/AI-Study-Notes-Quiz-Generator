@@ -1,11 +1,11 @@
-﻿const QuizAttempt = require("../models/QuizAttempt");
+const QuizAttempt = require("../models/QuizAttempt");
 const { calculateStreak } = require("../utils/streakUtils");
 
 // NOTE: once auth middleware + userId scoping is added, filter this query
 // by req.user.uid. For now it reads all completed attempts.
 async function getStreak(req, res, next) {
   try {
-    const attempts = await QuizAttempt.find({ status: "completed" })
+    const attempts = await QuizAttempt.find({ status: "completed", userId: req.user.uid })
       .select("createdAt")
       .lean();
 

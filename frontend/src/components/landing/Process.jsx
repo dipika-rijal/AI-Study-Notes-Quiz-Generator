@@ -3,7 +3,7 @@ export default function Process() {
     {
       icon: "⇲",
       title: "Add",
-      text: "Drop in your topic, notes, or video link.",
+      text: "Drop in your topic or study notes.",
       color: "from-[#6757ff] to-[#8b5cf6]",
     },
     {

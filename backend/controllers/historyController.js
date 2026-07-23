@@ -7,10 +7,10 @@ async function getHistory(req, res, next) {
   try {
     const filter = req.query.type || "all";
 
-    const notes = await Note.find().sort({ updatedAt: -1 }).lean();
-    const quizzes = await Quiz.find().sort({ createdAt: -1 }).lean();
-    const attempts = await QuizAttempt.find().sort({ createdAt: -1 }).lean();
-    const conversations = await Conversation.find().sort({ updatedAt: -1 }).lean();
+    const notes = await Note.find({ userId: req.user.uid }).sort({ updatedAt: -1 }).lean();
+    const quizzes = await Quiz.find({ userId: req.user.uid }).sort({ createdAt: -1 }).lean();
+    const attempts = await QuizAttempt.find({ userId: req.user.uid }).sort({ createdAt: -1 }).lean();
+    const conversations = await Conversation.find({ userId: req.user.uid }).sort({ updatedAt: -1 }).lean();
 
     const noteItems = notes.map(function (note) {
       return {
@@ -125,9 +125,9 @@ async function getRecentActivity(req, res, next) {
   try {
     const limit = Number(req.query.limit) || 5;
 
-    const notes = await Note.find().sort({ updatedAt: -1 }).limit(limit).lean();
-    const quizzes = await Quiz.find().sort({ createdAt: -1 }).limit(limit).lean();
-    const attempts = await QuizAttempt.find().sort({ createdAt: -1 }).limit(limit).lean();
+    const notes = await Note.find({ userId: req.user.uid }).sort({ updatedAt: -1 }).limit(limit).lean();
+    const quizzes = await Quiz.find({ userId: req.user.uid }).sort({ createdAt: -1 }).limit(limit).lean();
+    const attempts = await QuizAttempt.find({ userId: req.user.uid }).sort({ createdAt: -1 }).limit(limit).lean();
 
     const items = [];
 
