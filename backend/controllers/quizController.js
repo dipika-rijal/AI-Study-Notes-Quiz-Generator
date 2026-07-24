@@ -1,5 +1,6 @@
 const Quiz = require("../models/Quiz.js");
 const QuizAttempt = require("../models/QuizAttempt.js");
+const UserPreference = require("../models/UserPreference.js");
 
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 const OPTION_LETTERS = ["A", "B", "C", "D"];
@@ -110,6 +111,8 @@ function normalizeGeneratedQuestions(rawQuestions, requestedCount) {
       ).trim();
 
       const wrong = item.explanation_wrong || (item.explanation && item.explanation.wrong) || {};
+      const coreConcept = String(item.core_concept || (item.explanation && item.explanation.core_concept) || "").trim();
+      const memoryTrick = String(item.memory_trick || (item.explanation && item.explanation.memory_trick) || "").trim();
 
       return {
         question: String(item.question || "").trim(),
@@ -117,6 +120,8 @@ function normalizeGeneratedQuestions(rawQuestions, requestedCount) {
         correctAnswer: correctAnswer,
         explanation: {
           correct: explanationCorrect,
+          core_concept: coreConcept,
+          memory_trick: memoryTrick,
           wrong: {
             A: String(wrong.A || "").trim(),
             B: String(wrong.B || "").trim(),
@@ -178,6 +183,8 @@ function toApiQuestion(question) {
         question.explanation?.correct ||
         question.options[correctIndex]?.explanation ||
         "This is the correct answer.",
+      core_concept: question.explanation?.core_concept || "",
+      memory_trick: question.explanation?.memory_trick || "",
       wrong: {
         A: question.explanation?.wrong?.A || question.options[0]?.explanation || "",
         B: question.explanation?.wrong?.B || question.options[1]?.explanation || "",
@@ -188,12 +195,17 @@ function toApiQuestion(question) {
   };
 }
 
-function buildQuizPrompt(payload) {
+function buildQuizPrompt(payload, learningProfile = null) {
   const numberOfQuestions = normalizeQuestionCount(payload.numberOfQuestions);
   const difficulty = normalizeDifficulty(payload.difficulty);
   const sourceType = normalizeSourceType(payload.sourceType);
   const topic = String(payload.topic || "").trim() || "Study quiz";
   const content = String(payload.content || "").trim();
+
+  let profileContext = "";
+  if (learningProfile && learningProfile.weaknesses && learningProfile.weaknesses.length > 0) {
+    profileContext = `\nImportant: The student has weaknesses in the following areas: ${learningProfile.weaknesses.join(", ")}. Please preemptively address these if they are relevant to the topic.`;
+  }
 
   return {
     numberOfQuestions,
@@ -203,7 +215,7 @@ function buildQuizPrompt(payload) {
     messages: [
       {
         role: "system",
-        content: `You are StudyGen AI, an educational quiz generator.
+        content: `You are StudyGen AI, an educational quiz generator. Speak in a patient, encouraging, and supportive tone in your explanations.
 
 Rules:
 ${getSourceInstruction(sourceType, numberOfQuestions)}
@@ -214,7 +226,8 @@ ${getSourceInstruction(sourceType, numberOfQuestions)}
   medium = applied understanding
   hard = edge cases, tradeoffs, or multi-step reasoning
   mixed = a balanced spread
-- Return only valid JSON. No markdown. No extra text.`
+- Progressive difficulty: Make earlier questions easier and progress towards advanced reasoning.
+- Return only valid JSON. No markdown. No extra text.${profileContext}`
       },
       {
         role: "user",
@@ -231,8 +244,10 @@ For EACH question, follow this exact internal process before finalizing:
 2. Write 4 answer options (A-D), only one of which is factually correct.
 3. Identify which letter is correct.
 4. VERIFY: Re-read the correct option's text on its own — does it, standing alone, accurately and completely answer the question? If not, rewrite the option or change which letter is marked correct until it does.
-5. Write a one-sentence justification for the correct answer that directly supports the exact wording of that option (not a different, better phrasing).
+5. Write a one-sentence justification for the correct answer.
 6. Write one short reason each option is wrong — for the "correct" slot, this step should be empty/skipped.
+7. Write the underlying core concept behind the question.
+8. Write a simple memory trick to help the student remember this concept.
 
 Output strict JSON in this schema:
 {
@@ -242,7 +257,9 @@ Output strict JSON in this schema:
       "options": {"A": "string", "B": "string", "C": "string", "D": "string"},
       "correct_answer": "A" | "B" | "C" | "D",
       "explanation_correct": "string, must justify the exact text of the correct_answer option",
-      "explanation_wrong": {"A": "string", "B": "string", "C": "string", "D": "string"}
+      "explanation_wrong": {"A": "string", "B": "string", "C": "string", "D": "string"},
+      "core_concept": "string, the concept behind the question",
+      "memory_trick": "string, a simple memory trick"
     }
   ]
 }
@@ -426,7 +443,8 @@ async function generateWithRetry(prompt) {
 
 async function generateQuiz(req, res, next) {
   try {
-    const prompt = buildQuizPrompt(req.body || {});
+    const prefs = await UserPreference.findOne({ userId: req.user.uid });
+    const prompt = buildQuizPrompt(req.body || {}, prefs?.learningProfile);
     const generatedQuestions = await generateWithRetry(prompt);
 
     const quiz = await Quiz.create({
@@ -515,14 +533,29 @@ async function checkAnswer(req, res, next) {
 
 async function updateQuiz(req, res, next) {
   try {
+    const { missedConcepts, ...updateData } = req.body;
+
     const quiz = await Quiz.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.uid },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    if (missedConcepts && missedConcepts.length > 0) {
+      const prefs = await UserPreference.findOne({ userId: req.user.uid });
+      if (prefs) {
+        const currentWeaknesses = prefs.learningProfile?.weaknesses || [];
+        const newWeaknesses = [...new Set([...currentWeaknesses, ...missedConcepts])].slice(-10); // Keep last 10
+        
+        await UserPreference.findOneAndUpdate(
+          { userId: req.user.uid },
+          { $set: { "learningProfile.weaknesses": newWeaknesses } }
+        );
+      }
     }
 
     res.json({ success: true, message: "Quiz updated", quiz: quiz });

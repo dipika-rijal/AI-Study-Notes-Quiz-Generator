@@ -1,6 +1,8 @@
+import api from "../api/axios";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { streamAIChatResponse, generateChatCompletion } from "../services/ai";
 import { getConversation, saveConversation } from "../api/conversationApi";
+import { getPreferences } from "../api/preferenceApi";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ||
@@ -147,45 +149,60 @@ function detectInitialIntent(text) {
   return { intent: "" };
 }
 
-function buildTopicNotesPrompt(topic, purpose) {
+function buildTopicNotesPrompt(topic, purpose, learningProfile = null) {
   const purposeConfig = NOTE_PURPOSE_CONFIG[purpose] || NOTE_PURPOSE_CONFIG.learn;
+
+  let profileContext = "";
+  if (learningProfile && learningProfile.weaknesses && learningProfile.weaknesses.length > 0) {
+    profileContext = `\nImportant: The student has weaknesses in the following areas: ${learningProfile.weaknesses.join(", ")}. Please preemptively address these if they are relevant to the topic.`;
+  }
 
   return [
     {
       role: "system",
-      content: `You are an AI study assistant.
+      content: `You are an expert, encouraging university professor.
 
-Generate notes about the given topic.
+Generate notes about the given topic using this exact teaching structure (use Markdown headers):
 
-Use these clean section headings in this order:
-- Definition
-- Simple Explanation
-- Syntax
-- How It Works
-- Key Concepts
-- Practical Examples
-- Common Mistakes
-- Interview Questions
-- Exam Summary
+## Level 1: Beginner Understanding
+- Simple Definition: Explain like the student has never heard about this. Define basic words first.
+- Real-Life Example: A simple example from daily life.
+
+## Level 2: Foundation
+- Core Concept: Explain the core concept, why it exists, and how it works step-by-step.
+
+## Level 3: Technical Understanding
+- Technical Details: Introduce proper terminology, formulas, algorithms, or architecture. Explain each part clearly.
+
+## Level 4: Advanced Understanding
+- Advanced Applications: Explain deeper concepts and real-world applications.
+- Common Mistakes: Common mistakes and how to avoid them.
+
+## Level 5: Expert Thinking
+- Expert Perspective: How professionals think about this. Connect with related concepts.
+- Interview/Exam Focus: Crucial points for exams or interviews.
+
+## Remember This
+- One final, memorable sentence to summarize everything.
+
+## Practice Question
+- A short practice question to test understanding.
 
 Rules:
+- Speak in a patient, encouraging, and clear tone.
+- Do not assume prior knowledge.
 - Do not use markdown code blocks unless showing actual code.
-- Do not use backticks for normal technical words.
-- Do not write "CODE", "Copy", or any UI labels.
-- Use normal text for concepts like useState, state, props, and hooks.
 - Only wrap complete programming examples in triple backticks.
-- Keep headings clean.
-- Use bullet points instead of excessive numbering.
 - Explain concepts before examples.
 - Adjust depth based on the selected style:
-  quick = short summary
-  beginner = simple explanation
+  quick = short summary but keep the levels
+  beginner = extra simple explanations
   exam = structured revision notes
   detailed = deep explanation
 
 Selected purpose: ${purposeConfig.label}
 Selected style: ${purposeConfig.style}
-Depth guidance: ${purposeConfig.instruction}`
+Depth guidance: ${purposeConfig.instruction}${profileContext}`
     },
     { role: "user", content: `Topic: ${topic}` }
   ];
@@ -425,8 +442,19 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
   const [pastedContent, setPastedContent] = useState("");
   const [selectedPurpose, setSelectedPurpose] = useState(""); // learn, exam, interview, quick
   const [errorMessage, setErrorMessage] = useState("");
+  const [learningProfile, setLearningProfile] = useState(null);
 
   const activeStreamRef = useRef(null);
+
+  useEffect(() => {
+    getPreferences().then((data) => {
+      if (data && data.data && data.data.learningProfile) {
+        setLearningProfile(data.data.learningProfile);
+      }
+    }).catch(err => {
+      console.error("Failed to load learning profile", err);
+    });
+  }, []);
 
   // If there's a savedNoteId parameter, load it as a static message in the chat
   useEffect(() => {
@@ -1110,7 +1138,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         content: `Generating notes for **${currentTopic}**.`,
         type: "text"
       });
-      await streamAIResponse(buildTopicNotesPrompt(currentTopic, optionValue), "notes", {
+      await streamAIResponse(buildTopicNotesPrompt(currentTopic, optionValue, learningProfile), "notes", {
         title: currentTopic,
         category: NOTE_PURPOSE_CONFIG[optionValue].label,
         showFollowUpActions: true
@@ -1324,14 +1352,8 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
   const handleSaveToHistory = useCallback(async (msgId, notePayload) => {
     setLoadingState("saving");
     try {
-      const response = await fetch("http://localhost:5000/api/notes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notePayload)
-      });
-
-      if (!response.ok) throw new Error("Server error");
-      const result = await response.json();
+      const response = await api.post("/notes", notePayload);
+      const result = response.data;
       const savedId = result.note?._id;
 
       // Update message with saved state
@@ -1374,3 +1396,4 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
     }
   };
 }
+

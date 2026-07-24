@@ -10,8 +10,7 @@ const API_BASE_URL = (
 ).replace(/\/api\/?$/, "");
 
 const SOURCE_OPTIONS = [
-  { value: "file", label: "Upload Files" },
-  { value: "image", label: "Upload Image" }
+  { value: "file", label: "Upload Files" }
 ];
 
 const QUESTION_COUNT_OPTIONS = [5, 10, 15, 20];
@@ -242,10 +241,6 @@ export default function CreateQuiz() {
     if (value === "file") {
       setStep("waitingForUpload");
       appendMessage(createMessage("assistant", "Upload a document for the quiz."));
-    } else if (value === "image") {
-      setErrorMessage('Image analysis is not enabled by the current AI API. Please upload a file.');
-      setStep("chooseSource");
-      setSourceType("");
     }
   }
 
@@ -495,13 +490,18 @@ export default function CreateQuiz() {
   async function saveFinalScore() {
     if (!quiz?.quizId) return;
 
+    const missedConcepts = Object.values(answers)
+      .filter((a) => !a.correct && a.explanation?.core_concept)
+      .map((a) => a.explanation.core_concept);
+
     try {
       await fetch(`${API_BASE_URL}/api/quizzes/${quiz.quizId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           score: correctCount,
-          totalQuestions
+          totalQuestions,
+          missedConcepts
         })
       });
     } catch (error) {
@@ -685,6 +685,13 @@ export default function CreateQuiz() {
                   </p>
 
                   <div className="mt-4 space-y-3 text-sm leading-6">
+                    {currentAnswer.explanation?.core_concept && (
+                      <div className="mb-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 p-4 border border-purple-100 dark:border-purple-800/50">
+                        <p className="font-black text-purple-900 dark:text-purple-300">🧠 Core Concept:</p>
+                        <p className="font-semibold text-purple-800 dark:text-purple-400">{currentAnswer.explanation.core_concept}</p>
+                      </div>
+                    )}
+
                     <div>
                       <p className="font-black text-[#15132b] dark:text-[#ececec]">Why this is correct:</p>
                       <p className="font-semibold text-[#655d80] dark:text-[#b4b4b4]">{currentAnswer.explanation?.correct}</p>
@@ -700,6 +707,13 @@ export default function CreateQuiz() {
                         ))}
                       </div>
                     </div>
+
+                    {currentAnswer.explanation?.memory_trick && (
+                      <div className="mt-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 p-4 border border-yellow-100 dark:border-yellow-800/50">
+                        <p className="font-black text-yellow-900 dark:text-yellow-300">💡 Memory Trick:</p>
+                        <p className="font-semibold text-yellow-800 dark:text-yellow-400">{currentAnswer.explanation.memory_trick}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-5 flex justify-between">

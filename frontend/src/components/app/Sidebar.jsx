@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, BrainCircuit, Clock3, Home, Layers3, LogOut, Sparkles } from 'lucide-react';
+import { BookOpen, BrainCircuit, CalendarDays, Clock3, GraduationCap, Home, Layers3, LogOut, Sparkles } from 'lucide-react';
 
 const navigation = [
   { to: '/app', label: 'Home', icon: Home, end: true },
   { to: '/app/notes', label: 'Notes', icon: BookOpen },
   { to: '/app/quiz', label: 'Quiz', icon: BrainCircuit },
+  { to: '/app/tutor', label: 'Tutor', icon: GraduationCap },
+  { to: '/app/planner', label: 'AI Planner', icon: CalendarDays },
   { to: '/app/history', label: 'History', icon: Clock3 },
 ];
 

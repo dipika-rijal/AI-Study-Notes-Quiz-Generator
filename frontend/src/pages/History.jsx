@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import api from "../api/axios";
 import StudySessionCard from "../components/app/StudySessionCard";
 import QuizReview from "../components/app/QuizReview";
 
@@ -19,10 +20,8 @@ export default function History() {
       setLoading(true);
       setError("");
       const query = type === "all" ? "" : "?type=" + type;
-      const response = await fetch("http://localhost:5000/api/history" + query);
-      if (!response.ok) throw new Error("Failed to fetch history");
-      const result = await response.json();
-      setData(result);
+      const response = await api.get("/history" + query);
+      setData(response.data);
     } catch (err) {
       console.error(err);
       setError("History could not load. Make sure backend is running on port 5000.");

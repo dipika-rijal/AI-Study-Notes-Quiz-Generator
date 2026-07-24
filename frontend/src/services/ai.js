@@ -107,44 +107,67 @@ function cleanArray(value) {
     .filter(Boolean);
 }
 
-export async function generateNotesWithAI(input, inputType) {
+export async function generateNotesWithAI(input, inputType, learningProfile = null) {
   const isVideo = inputType.toLowerCase().includes("video");
+  
+  let profileContext = "";
+  if (learningProfile && learningProfile.weaknesses && learningProfile.weaknesses.length > 0) {
+    profileContext = `The student has weaknesses in the following areas: ${learningProfile.weaknesses.join(", ")}. Please preemptively address these if they are relevant to the topic.`;
+  }
 
   const response = await createGroqCompletion("generateNotesWithAI", {
     model: MODEL,
     temperature: 0.35,
-    max_completion_tokens: 900,
+    max_completion_tokens: 2000,
     response_format: { type: "json_object" },
     messages: [
       {
         role: "system",
         content:
-          "You are StudyGen AI, a helpful study assistant. Return only valid JSON. No markdown. No code block.",
+          "You are StudyGen AI, an expert, encouraging university professor. Return only valid JSON. No markdown outside of the JSON. No code block wrappers.",
       },
       {
         role: "user",
         content: `
-Create beginner-friendly study notes.
+Create an expert, structured study guide that takes the student from absolute beginner to advanced understanding.
+Speak in a patient, encouraging, and clear tone.
 
 Input type: ${inputType}
 Student input:
 ${input}
+${profileContext}
 
-Return only JSON in this exact shape:
+Return only JSON in this EXACT shape:
 {
   "title": "short clear title",
   "summary": "simple summary paragraph",
-  "points": ["point 1", "point 2", "point 3", "point 4"],
-  "revisionLine": "one final revision sentence"
+  "level1_beginner": {
+    "simpleDefinition": "Explain like the student has never heard about this. Define basic words first.",
+    "realLifeExample": "A simple example from daily life."
+  },
+  "level2_foundation": {
+    "coreConcept": "Explain the core concept, why it exists, and how it works step-by-step."
+  },
+  "level3_technical": {
+    "technicalUnderstanding": "Introduce proper terminology, formulas, algorithms, or architecture. Explain each part clearly."
+  },
+  "level4_advanced": {
+    "advancedApplications": "Explain deeper concepts and real-world applications.",
+    "commonMistakes": "Common mistakes and how to avoid them."
+  },
+  "level5_expert": {
+    "expertThinking": "How professionals think about this. Connect with related concepts.",
+    "interviewExamPerspective": "Crucial points for exams or interviews."
+  },
+  "rememberThis": "One final, memorable sentence to summarize everything.",
+  "practiceQuestion": "A short practice question to test understanding."
 }
 
 Rules:
-- Make the notes simple, clear, and useful for revision.
 - If input type is Topic, explain the topic directly.
-- If input type is Upload / Paste, summarize the pasted/uploaded content.
-- If input type is Video Link, use the video link plus any title/topic/description provided by the user.
-- If only a raw video link is provided and no title/topic is clear, do not pretend you watched the video. Create general notes from available text and mention that transcript extraction is not added yet.
-- Return only JSON.
+- If input type is Upload / Paste, summarize the pasted/uploaded content in this structure.
+- If input type is Video Link, use the video link plus any title/topic/description provided. If you can't access it, create general notes on the topic.
+- Return ONLY JSON.
 ${isVideo ? "Important: For video link mode, focus on the video title/topic/details supplied by the user. Do not claim to access full transcript." : ""}
         `,
       },
@@ -156,21 +179,17 @@ ${isVideo ? "Important: For video link mode, focus on the video title/topic/deta
 
   const title = cleanText(data.title, "Generated Notes");
   const summary = cleanText(data.summary, "No summary generated.");
-  const points = cleanArray(data.points);
-  const revisionLine = cleanText(
-    data.revisionLine,
-    "Revise the summary and key points carefully."
-  );
-
-  if (!points.length) {
-    throw new Error("AI did not return valid key points.");
-  }
 
   return {
     title,
     summary,
-    points,
-    revisionLine,
+    level1_beginner: data.level1_beginner || {},
+    level2_foundation: data.level2_foundation || {},
+    level3_technical: data.level3_technical || {},
+    level4_advanced: data.level4_advanced || {},
+    level5_expert: data.level5_expert || {},
+    rememberThis: cleanText(data.rememberThis, "Revise carefully."),
+    practiceQuestion: cleanText(data.practiceQuestion, "")
   };
 }
 

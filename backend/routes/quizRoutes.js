@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const router = express.Router();
 const { requireAuth } = require("../middleware/auth.js");
 
@@ -25,4 +25,5 @@ router.put("/:id", updateQuiz);
 router.delete("/:id", deleteQuiz);
 
 module.exports = router;
+
 

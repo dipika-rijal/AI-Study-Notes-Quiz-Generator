@@ -1,0 +1,133 @@
+import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
+import { GraduationCap } from 'lucide-react';
+import { useTutorFlow } from "../hooks/useTutorFlow";
+import ChatMessage from "../components/app/MessageBubble";
+import ChatInput from "../components/app/ChatInput";
+
+export default function Tutor() {
+  const [searchParams] = useSearchParams();
+  const conversationId = searchParams.get("conversationId");
+
+  const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  const {
+    messages,
+    loadingState,
+    errorMessage,
+    setErrorMessage,
+    tutorMode,
+    setTutorMode,
+    actions
+  } = useTutorFlow(conversationId);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: loadingState === "generating" ? "auto" : "smooth"
+    });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loadingState]);
+
+  const isGenerating = loadingState === "generating";
+
+  const MODES = [
+    { value: "beginner", label: "Beginner" },
+    { value: "exam", label: "Exam Prep" },
+    { value: "deep", label: "Deep Learning" },
+    { value: "coding", label: "Coding Tutor" }
+  ];
+
+  return (
+    <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col bg-transparent">
+      {/* Header */}
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--theme-glass-border)] pb-5 select-none">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-xl text-[var(--color-primary-600)]">
+            <GraduationCap size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
+              AI Tutor
+            </h1>
+            <p className="mt-1 text-sm text-[var(--theme-text-secondary)]">
+              Your personal AI teacher that remembers your weaknesses.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <select
+            value={tutorMode}
+            onChange={(e) => setTutorMode(e.target.value)}
+            className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-primary)] outline-none focus:border-[var(--color-primary-500)]"
+          >
+            {MODES.map((mode) => (
+              <option key={mode.value} value={mode.value}>
+                {mode.label} Mode
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={actions.resetChat}
+            className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+          >
+            🗑 Clear
+          </button>
+        </div>
+      </header>
+
+      {/* Main Conversation viewport */}
+      <main
+        ref={scrollContainerRef}
+        className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 md:p-6"
+      >
+        <div className="mx-auto max-w-[900px] space-y-5">
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              isGenerating={isGenerating}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </main>
+
+      {/* Error Panel */}
+      {errorMessage && (
+        <div className="mb-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 p-4 shadow-sm dark:shadow-none">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-red-600 dark:text-red-400">
+              ⚠️ {errorMessage}
+            </p>
+            <button
+              onClick={() => setErrorMessage("")}
+              className="rounded-lg bg-white dark:bg-transparent border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1.5 text-2xs font-extrabold transition"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Input */}
+      <footer className="mx-auto w-full max-w-[920px] select-none">
+        <ChatInput
+          onSend={(text) => actions.sendMessage(text, null)}
+          disabled={isGenerating}
+          loadingState={loadingState}
+          setErrorMessage={setErrorMessage}
+          setLoadingState={() => {}}
+        />
+        <div className="mt-2 text-center text-[10px] font-medium text-[var(--theme-text-muted)]">
+          Tutor adapts to your learning profile automatically.
+        </div>
+      </footer>
+    </div>
+  );
+}

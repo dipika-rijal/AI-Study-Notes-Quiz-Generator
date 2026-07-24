@@ -1,5 +1,5 @@
 const UserPreference = require("../models/UserPreference.js");
-const { sendResponse, sendError } = require("../utils/apiResponse.js");
+const { sendSuccess, sendError } = require("../utils/apiResponse.js");
 
 exports.getPreferences = async (req, res) => {
   try {
@@ -10,11 +10,14 @@ exports.getPreferences = async (req, res) => {
       prefs = await UserPreference.create({ userId, theme: "dark", accent: "purple" });
     }
     
-    return sendResponse(res, "Preferences retrieved", {
+    return sendSuccess(res, {
+      message: "Preferences retrieved",
       theme: prefs.theme,
-      accent: prefs.accent
+      accent: prefs.accent,
+      learningProfile: prefs.learningProfile || { weaknesses: [], strengths: [], preferredStyle: "balanced" }
     });
   } catch (error) {
+    require("fs").appendFileSync("error.log", error.stack + "\\n");
     console.error("Error fetching preferences:", error);
     return sendError(res, "Failed to retrieve preferences", 500);
   }
@@ -23,19 +26,27 @@ exports.getPreferences = async (req, res) => {
 exports.updatePreferences = async (req, res) => {
   try {
     const userId = req.user.uid;
-    const { theme, accent } = req.body;
+    const { theme, accent, learningProfile } = req.body;
     
+    const updateData = {};
+    if (theme) updateData.theme = theme;
+    if (accent) updateData.accent = accent;
+    if (learningProfile) updateData.learningProfile = learningProfile;
+
     const prefs = await UserPreference.findOneAndUpdate(
       { userId },
-      { $set: { theme, accent } },
+      { $set: updateData },
       { new: true, upsert: true }
     );
     
-    return sendResponse(res, "Preferences updated", {
+    return sendSuccess(res, {
+      message: "Preferences updated",
       theme: prefs.theme,
-      accent: prefs.accent
+      accent: prefs.accent,
+      learningProfile: prefs.learningProfile
     });
   } catch (error) {
+    require("fs").appendFileSync("error.log", error.stack + "\\n");
     console.error("Error updating preferences:", error);
     return sendError(res, "Failed to update preferences", 500);
   }
