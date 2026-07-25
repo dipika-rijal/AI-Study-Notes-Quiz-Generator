@@ -1,101 +1,23 @@
-import Groq from "groq-sdk";
-import { GROQ_API_KEY } from "../config/localGroqKey";
+import api from "../api/axios";
+import { auth } from "../config/firebase";
 
 const MODEL = "llama-3.1-8b-instant";
-const PLACEHOLDER_GROQ_API_KEY = "PASTE_YOUR_GROQ_API_KEY_HERE";
 
-function getConfiguredGroqApiKey() {
-  return import.meta.env.VITE_GROQ_API_KEY || GROQ_API_KEY;
-}
-
-function isDevelopment() {
-  return import.meta.env.DEV;
-}
-
-function logGroqRequest(label, payload) {
-  if (!isDevelopment()) return;
-  console.info(`[Groq:${label}] request payload`, payload);
-}
-
-function logGroqResponse(label, response) {
-  if (!isDevelopment()) return;
-  console.info(`[Groq:${label}] response`, response);
-}
-
-function createGroqError(error) {
-  const status = error?.status || error?.response?.status;
-  const statusText = error?.statusText || error?.response?.statusText || "";
-  const groqMessage = error?.error?.message || error?.message || "Groq request failed.";
-  const message = status
-    ? `Groq API returned ${status}${statusText ? ` ${statusText}` : ""}.`
-    : groqMessage;
-
-  const wrapped = new Error(message);
-  wrapped.name = "GroqRequestError";
-  wrapped.status = status;
-  wrapped.groqMessage = groqMessage;
-  wrapped.cause = error;
-  return wrapped;
-}
-
-function logGroqError(label, payload, error) {
-  if (!isDevelopment()) return;
-  console.error(`[Groq:${label}] request payload`, payload);
-  console.error(`[Groq:${label}] complete error object`, error);
-  console.error(`[Groq:${label}] HTTP status`, error?.status || error?.response?.status || "unknown");
-  console.error(`[Groq:${label}] response`, error?.response || error?.error || "No response object available");
-  console.error(`[Groq:${label}] stack trace`, error?.stack || "No stack trace available");
-}
-
-async function createGroqCompletion(label, payload) {
-  const groq = getGroqClient();
-  logGroqRequest(label, payload);
-
-  try {
-    const response = await groq.chat.completions.create(payload);
-    logGroqResponse(label, response);
-    return response;
-  } catch (error) {
-    logGroqError(label, payload, error);
-    throw createGroqError(error);
-  }
-}
-
-function getGroqClient() {
-  const apiKey = getConfiguredGroqApiKey();
-
-  if (!apiKey || apiKey === PLACEHOLDER_GROQ_API_KEY) {
-    throw new Error("Groq API key is missing. Set VITE_GROQ_API_KEY in your frontend environment or update localGroqKey.js.");
-  }
-
-  return new Groq({
-    apiKey,
-    dangerouslyAllowBrowser: true,
-  });
+function cleanText(value, fallback = "") {
+  if (typeof value !== "string") return fallback;
+  return value.trim();
 }
 
 function parseJson(content) {
-  if (!content) {
-    throw new Error("AI returned empty response.");
-  }
-
+  if (!content) throw new Error("AI returned empty response.");
   try {
     return JSON.parse(content);
   } catch {
     const start = content.indexOf("{");
     const end = content.lastIndexOf("}");
-
-    if (start === -1 || end === -1) {
-      throw new Error("AI did not return valid JSON.");
-    }
-
+    if (start === -1 || end === -1) throw new Error("AI did not return valid JSON.");
     return JSON.parse(content.slice(start, end + 1));
   }
-}
-
-function cleanText(value, fallback = "") {
-  if (typeof value !== "string") return fallback;
-  return value.trim();
 }
 
 function cleanArray(value) {
@@ -115,7 +37,7 @@ export async function generateNotesWithAI(input, inputType, learningProfile = nu
     profileContext = `The student has weaknesses in the following areas: ${learningProfile.weaknesses.join(", ")}. Please preemptively address these if they are relevant to the topic.`;
   }
 
-  const response = await createGroqCompletion("generateNotesWithAI", {
+  const response = await api.post("/ai/chat/complete", {
     model: MODEL,
     temperature: 0.35,
     max_completion_tokens: 2000,
@@ -174,7 +96,7 @@ ${isVideo ? "Important: For video link mode, focus on the video title/topic/deta
     ],
   });
 
-  const content = response.choices?.[0]?.message?.content;
+  const content = response.data?.choices?.[0]?.message?.content;
   const data = parseJson(content);
 
   const title = cleanText(data.title, "Generated Notes");
@@ -196,7 +118,7 @@ ${isVideo ? "Important: For video link mode, focus on the video title/topic/deta
 export async function generateQuizWithAI(input, inputType, questionCount) {
   const safeCount = Math.min(Math.max(Number(questionCount) || 5, 1), 20);
 
-  const response = await createGroqCompletion("generateQuizWithAI", {
+  const response = await api.post("/ai/chat/complete", {
     model: MODEL,
     temperature: 0.3,
     max_completion_tokens: 1800,
@@ -239,7 +161,7 @@ Rules:
     ],
   });
 
-  const content = response.choices?.[0]?.message?.content;
+  const content = response.data?.choices?.[0]?.message?.content;
   const data = parseJson(content);
 
   if (!Array.isArray(data.questions)) {
@@ -289,29 +211,58 @@ export async function* streamAIChatResponse(messages) {
     model: MODEL,
     messages: messages,
     temperature: 0.4,
-    stream: true,
   };
-  const responseStream = await createGroqCompletion("streamAIChatResponse", payload);
 
-  for await (const chunk of responseStream) {
-    const text = chunk.choices[0]?.delta?.content || "";
-    yield text;
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const user = auth.currentUser;
+  const token = user ? await user.getIdToken() : "";
+
+  const response = await fetch(`${API_URL}/ai/chat/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI stream request failed: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop(); // keep incomplete line for next chunk
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const dataStr = line.slice(6);
+        if (dataStr.trim() === "[DONE]") continue;
+        try {
+          const json = JSON.parse(dataStr);
+          const text = json.choices[0]?.delta?.content || "";
+          if (text) yield text;
+        } catch (e) {}
+      }
+    }
   }
 }
 
-/**
- * Generates a complete chat completion from Groq (non-streaming).
- * 
- * @param {Array<object>} messages - Message list in the format [{ role, content }].
- * @returns {Promise<string>} Full content string returned by the AI.
- */
 export async function generateChatCompletion(messages) {
-  const response = await createGroqCompletion("generateChatCompletion", {
+  const response = await api.post("/ai/chat/complete", {
     model: MODEL,
     messages: messages,
     temperature: 0.3,
   });
 
-  return response.choices[0]?.message?.content || "";
+  return response.data?.choices?.[0]?.message?.content || "";
 }
 

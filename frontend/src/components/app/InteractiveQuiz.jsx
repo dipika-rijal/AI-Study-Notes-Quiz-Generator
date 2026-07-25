@@ -3,12 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import QuizReview from "./QuizReview";
 import QuizOption from "./QuizOption";
 import ProgressBar from "../ui/ProgressBar";
+import api from "../../api/axios";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000"
-).replace(/\/api\/?$/, "");
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
@@ -200,18 +196,12 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
         };
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/quiz-attempts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quizId: data.quizId,
-          selectedAnswers: selectedPayload
-        })
+      const response = await api.post("/quiz-attempts", {
+        quizId: data.quizId,
+        selectedAnswers: selectedPayload
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Could not save attempt.");
-
+      const result = response.data;
       setAttemptId(result.attempt?._id || null);
       setIsSaved(true);
     } catch (error) {
@@ -225,10 +215,8 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
   async function handleUnsaveAttempt() {
     if (!attemptId) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/quiz-attempts/${attemptId}`, { method: "DELETE" });
-      if (response.ok) {
-        setIsSaved(false);
-      }
+      await api.delete(`/quiz-attempts/${attemptId}`);
+      setIsSaved(false);
     } catch (err) {
       console.error("Failed to unsave attempt", err);
     }

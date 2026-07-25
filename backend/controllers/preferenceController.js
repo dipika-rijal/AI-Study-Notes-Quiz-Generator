@@ -17,7 +17,6 @@ exports.getPreferences = async (req, res) => {
       learningProfile: prefs.learningProfile || { weaknesses: [], strengths: [], preferredStyle: "balanced" }
     });
   } catch (error) {
-    require("fs").appendFileSync("error.log", error.stack + "\\n");
     console.error("Error fetching preferences:", error);
     return sendError(res, "Failed to retrieve preferences", 500);
   }
@@ -46,7 +45,6 @@ exports.updatePreferences = async (req, res) => {
       learningProfile: prefs.learningProfile
     });
   } catch (error) {
-    require("fs").appendFileSync("error.log", error.stack + "\\n");
     console.error("Error updating preferences:", error);
     return sendError(res, "Failed to update preferences", 500);
   }

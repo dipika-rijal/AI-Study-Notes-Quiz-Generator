@@ -18,4 +18,14 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      console.warn("Authentication expired.");
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default api;

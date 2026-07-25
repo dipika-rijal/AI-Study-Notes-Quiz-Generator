@@ -40,7 +40,12 @@ async function requireAuth(req, res, next) {
       return sendError(res, "Auth service is not configured on the server", 503);
     }
 
-    const decoded = await getAuth().verifyIdToken(token);
+    const decoded = await getAuth().verifyIdToken(token, true);
+
+    if (!decoded.uid || typeof decoded.uid !== "string") {
+      return sendError(res, "Invalid token payload", 401);
+    }
+
     req.user = {
       uid: decoded.uid,
       email: decoded.email || null

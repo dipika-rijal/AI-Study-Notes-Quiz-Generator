@@ -4,6 +4,7 @@ import { useConversationFlow } from "../../hooks/useConversationFlow";
 import ChatMessage from "./MessageBubble";
 import ChatInput from "./ChatInput";
 import { Sparkles } from 'lucide-react';
+import api from "../../api/axios";
 
 /**
  * Main Chat Container for the Conversational Note Assistant.
@@ -19,12 +20,8 @@ export default function ChatPage() {
 
   // Fetch saved note details from MongoDB database (called by conversation hook)
   const loadSavedNoteById = async (noteId) => {
-    const response = await fetch(`http://localhost:5000/api/notes/${noteId}`);
-    if (!response.ok) {
-      throw new Error("Saved note not found");
-    }
-    const result = await response.json();
-    return result.note;
+    const response = await api.get(`/notes/${noteId}`);
+    return response.data.note;
   };
 
   const {

@@ -15,8 +15,10 @@ const {
   deleteQuiz
 } = require("../controllers/quizController.js");
 
-router.post("/generate", generateQuiz);
-router.post("/retry", retryQuiz);
+const { strictLimiter } = require("../middleware/rateLimit.js");
+
+router.post("/generate", strictLimiter, generateQuiz);
+router.post("/retry", strictLimiter, retryQuiz);
 router.post("/check-answer", checkAnswer);
 router.get("/", getQuizzes);
 router.get("/:id", getQuizById);

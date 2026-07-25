@@ -6,6 +6,8 @@ validateEnv();
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const connectDB = require("./config/db.js");
+const mongoSanitize = require("express-mongo-sanitize");
+const { generalLimiter } = require("./middleware/rateLimit");
 
 const noteRoutes = require("./routes/noteRoutes.js");
 const quizRoutes = require("./routes/quizRoutes.js");
@@ -15,6 +17,7 @@ const conversationRoutes = require("./routes/conversationRoutes.js");
 const preferenceRoutes = require("./routes/preferenceRoutes.js");
 const streakRoutes = require("./routes/streakRoutes.js");
 const planRoutes = require("./routes/planRoutes.js");
+const aiRoutes = require("./routes/aiRoutes.js");
 
 const app = express();
 
@@ -45,14 +48,11 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "50kb" }));
+app.use(express.urlencoded({ extended: true, limit: "50kb" }));
+app.use(mongoSanitize());
 
-const limiter = rateLimit({
-  windowMs: 60000,
-  max: 30
-});
-app.use("/api/quizzes/generate", limiter);
-app.use("/api/notes/generate", limiter);
+app.use("/api", generalLimiter);
 
 app.get("/api/health", function (req, res) {
   res.json({
@@ -70,6 +70,7 @@ app.use("/api/conversations", conversationRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/streaks", streakRoutes);
 app.use("/api/plans", planRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.use(function (req, res) {
   res.status(404).json({
@@ -78,12 +79,13 @@ app.use(function (req, res) {
   });
 });
 
-app.use(function (error, req, res, next) {
-  require("fs").appendFileSync("error.log", error.stack + "\\n");
-  console.error(error);
-  res.status(500).json({
+app.use(function (err, req, res, next) {
+  console.error(err);
+  const isDev = process.env.NODE_ENV === "development";
+  res.status(err.status || 500).json({
     success: false,
-    message: error.message || "Server error"
+    message: err.message || "Internal server error",
+    ...(isDev && { stack: err.stack })
   });
 });
 

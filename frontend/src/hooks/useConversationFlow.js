@@ -4,11 +4,6 @@ import { streamAIChatResponse, generateChatCompletion } from "../services/ai";
 import { getConversation, saveConversation } from "../api/conversationApi";
 import { getPreferences } from "../api/preferenceApi";
 
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000"
-).replace(/\/api\/?$/, "");
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
@@ -793,17 +788,9 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
     });
 
     try {
-      const endpoint = retry ? "/api/quiz/retry" : "/api/quiz/generate";
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || "Quiz generation failed.");
-      }
+      const endpoint = retry ? "/quiz/retry" : "/quiz/generate";
+      const response = await api.post(endpoint, payload);
+      const result = response.data;
 
       const quizData = normalizeQuizResult(result, payload);
       if (!quizData.questions.length) {

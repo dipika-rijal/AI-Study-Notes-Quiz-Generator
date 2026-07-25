@@ -5,6 +5,23 @@ const axios = require("axios");
 /* ──────────────────────────────────────────────
    AI helper
 ────────────────────────────────────────────── */
+const { body, validationResult } = require("express-validator");
+
+exports.validatePlan = [
+  body("goal").trim().notEmpty().escape().isLength({ max: 500 }),
+  body("subjects").optional().isArray({ max: 50 }),
+  body("examDate").isISO8601().toDate(),
+  body("availableHours").optional().isFloat({ min: 0.5, max: 24 }),
+  body("currentLevel").optional().isIn(["beginner", "intermediate", "advanced"]),
+  body("weakTopics").optional().isArray({ max: 100 }),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    next();
+  }
+];
 function getGroqApiKey() {
   return process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "";
 }
@@ -60,10 +77,10 @@ exports.generatePlan = async (req, res, next) => {
     // Calculate days until exam
     const now = new Date();
     const exam = new Date(examDate);
-    const durationDays = Math.max(
+    const durationDays = Math.min(365, Math.max(
       1,
       Math.ceil((exam - now) / (1000 * 60 * 60 * 24))
-    );
+    ));
 
     // Pull learning profile from preferences
     const prefs = await UserPreference.findOne({ userId });
@@ -284,27 +301,4 @@ exports.deletePlan = async (req, res, next) => {
   }
 };
 
-/* ──────────────────────────────────────────────
-   Legacy: updateTaskStatus (backward compat)
-   PUT /api/plans/task
-────────────────────────────────────────────── */
-exports.updateTaskStatus = async (req, res, next) => {
-  try {
-    const { planId, dayIndex, taskIndex, completed } = req.body;
-
-    const plan = await Plan.findOne({ _id: planId, userId: req.user.uid });
-    if (!plan)
-      return res.status(404).json({ success: false, message: "Plan not found" });
-
-    if (plan.schedule && plan.schedule[dayIndex]?.tasks[taskIndex] != null) {
-      plan.schedule[dayIndex].tasks[taskIndex].completed = completed;
-      plan.markModified("schedule");
-      await plan.save();
-    }
-
-    res.json({ success: true, plan });
-  } catch (error) {
-    next(error);
-  }
-};
 
