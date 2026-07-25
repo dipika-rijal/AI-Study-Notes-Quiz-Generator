@@ -3,6 +3,7 @@ import { landingTheme } from './landingTheme';
 import { appThemes, appAccents } from './appTheme';
 import { applyThemeVariables } from './themeUtils';
 import { getPreferences, updatePreferences } from '../api/preferenceApi';
+import { auth } from '../config/firebase';
 
 // ==========================================
 // LANDING THEME PROVIDER
@@ -49,7 +50,18 @@ export const AppThemeProvider = ({ children, noStyles = false }) => {
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialTheme = systemPrefersDark ? 'dark' : 'light';
     
-    // 2. Load from API
+    // 2. Only fetch from API if user is authenticated
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      // No user logged in — use localStorage fallback, skip API call entirely
+      const savedTheme = localStorage.getItem('studygen-app-theme');
+      const savedAccent = localStorage.getItem('studygen-app-accent');
+      setThemeState(savedTheme || initialTheme);
+      setAccentState(savedAccent || 'purple');
+      setIsLoaded(true);
+      return;
+    }
+
     getPreferences()
       .then(prefs => {
         setThemeState(prefs.data.theme || initialTheme);

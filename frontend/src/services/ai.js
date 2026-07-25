@@ -1,101 +1,23 @@
-import Groq from "groq-sdk";
-import { GROQ_API_KEY } from "../config/localGroqKey";
+import api from "../api/axios";
+import { auth } from "../config/firebase";
 
 const MODEL = "llama-3.1-8b-instant";
-const PLACEHOLDER_GROQ_API_KEY = "PASTE_YOUR_GROQ_API_KEY_HERE";
 
-function getConfiguredGroqApiKey() {
-  return import.meta.env.VITE_GROQ_API_KEY || GROQ_API_KEY;
-}
-
-function isDevelopment() {
-  return import.meta.env.DEV;
-}
-
-function logGroqRequest(label, payload) {
-  if (!isDevelopment()) return;
-  console.info(`[Groq:${label}] request payload`, payload);
-}
-
-function logGroqResponse(label, response) {
-  if (!isDevelopment()) return;
-  console.info(`[Groq:${label}] response`, response);
-}
-
-function createGroqError(error) {
-  const status = error?.status || error?.response?.status;
-  const statusText = error?.statusText || error?.response?.statusText || "";
-  const groqMessage = error?.error?.message || error?.message || "Groq request failed.";
-  const message = status
-    ? `Groq API returned ${status}${statusText ? ` ${statusText}` : ""}.`
-    : groqMessage;
-
-  const wrapped = new Error(message);
-  wrapped.name = "GroqRequestError";
-  wrapped.status = status;
-  wrapped.groqMessage = groqMessage;
-  wrapped.cause = error;
-  return wrapped;
-}
-
-function logGroqError(label, payload, error) {
-  if (!isDevelopment()) return;
-  console.error(`[Groq:${label}] request payload`, payload);
-  console.error(`[Groq:${label}] complete error object`, error);
-  console.error(`[Groq:${label}] HTTP status`, error?.status || error?.response?.status || "unknown");
-  console.error(`[Groq:${label}] response`, error?.response || error?.error || "No response object available");
-  console.error(`[Groq:${label}] stack trace`, error?.stack || "No stack trace available");
-}
-
-async function createGroqCompletion(label, payload) {
-  const groq = getGroqClient();
-  logGroqRequest(label, payload);
-
-  try {
-    const response = await groq.chat.completions.create(payload);
-    logGroqResponse(label, response);
-    return response;
-  } catch (error) {
-    logGroqError(label, payload, error);
-    throw createGroqError(error);
-  }
-}
-
-function getGroqClient() {
-  const apiKey = getConfiguredGroqApiKey();
-
-  if (!apiKey || apiKey === PLACEHOLDER_GROQ_API_KEY) {
-    throw new Error("Groq API key is missing. Set VITE_GROQ_API_KEY in your frontend environment or update localGroqKey.js.");
-  }
-
-  return new Groq({
-    apiKey,
-    dangerouslyAllowBrowser: true,
-  });
+function cleanText(value, fallback = "") {
+  if (typeof value !== "string") return fallback;
+  return value.trim();
 }
 
 function parseJson(content) {
-  if (!content) {
-    throw new Error("AI returned empty response.");
-  }
-
+  if (!content) throw new Error("AI returned empty response.");
   try {
     return JSON.parse(content);
   } catch {
     const start = content.indexOf("{");
     const end = content.lastIndexOf("}");
-
-    if (start === -1 || end === -1) {
-      throw new Error("AI did not return valid JSON.");
-    }
-
+    if (start === -1 || end === -1) throw new Error("AI did not return valid JSON.");
     return JSON.parse(content.slice(start, end + 1));
   }
-}
-
-function cleanText(value, fallback = "") {
-  if (typeof value !== "string") return fallback;
-  return value.trim();
 }
 
 function cleanArray(value) {
@@ -107,77 +29,96 @@ function cleanArray(value) {
     .filter(Boolean);
 }
 
-export async function generateNotesWithAI(input, inputType) {
+export async function generateNotesWithAI(input, inputType, learningProfile = null) {
   const isVideo = inputType.toLowerCase().includes("video");
+  
+  let profileContext = "";
+  if (learningProfile && learningProfile.weaknesses && learningProfile.weaknesses.length > 0) {
+    profileContext = `The student has weaknesses in the following areas: ${learningProfile.weaknesses.join(", ")}. Please preemptively address these if they are relevant to the topic.`;
+  }
 
-  const response = await createGroqCompletion("generateNotesWithAI", {
+  const response = await api.post("/ai/chat/complete", {
     model: MODEL,
     temperature: 0.35,
-    max_completion_tokens: 900,
+    max_completion_tokens: 2000,
     response_format: { type: "json_object" },
     messages: [
       {
         role: "system",
         content:
-          "You are StudyGen AI, a helpful study assistant. Return only valid JSON. No markdown. No code block.",
+          "You are StudyGen AI, an expert, encouraging university professor. Return only valid JSON. No markdown outside of the JSON. No code block wrappers.",
       },
       {
         role: "user",
         content: `
-Create beginner-friendly study notes.
+Create an expert, structured study guide that takes the student from absolute beginner to advanced understanding.
+Speak in a patient, encouraging, and clear tone.
 
 Input type: ${inputType}
 Student input:
 ${input}
+${profileContext}
 
-Return only JSON in this exact shape:
+Return only JSON in this EXACT shape:
 {
   "title": "short clear title",
   "summary": "simple summary paragraph",
-  "points": ["point 1", "point 2", "point 3", "point 4"],
-  "revisionLine": "one final revision sentence"
+  "level1_beginner": {
+    "simpleDefinition": "Explain like the student has never heard about this. Define basic words first.",
+    "realLifeExample": "A simple example from daily life."
+  },
+  "level2_foundation": {
+    "coreConcept": "Explain the core concept, why it exists, and how it works step-by-step."
+  },
+  "level3_technical": {
+    "technicalUnderstanding": "Introduce proper terminology, formulas, algorithms, or architecture. Explain each part clearly."
+  },
+  "level4_advanced": {
+    "advancedApplications": "Explain deeper concepts and real-world applications.",
+    "commonMistakes": "Common mistakes and how to avoid them."
+  },
+  "level5_expert": {
+    "expertThinking": "How professionals think about this. Connect with related concepts.",
+    "interviewExamPerspective": "Crucial points for exams or interviews."
+  },
+  "rememberThis": "One final, memorable sentence to summarize everything.",
+  "practiceQuestion": "A short practice question to test understanding."
 }
 
 Rules:
-- Make the notes simple, clear, and useful for revision.
 - If input type is Topic, explain the topic directly.
-- If input type is Upload / Paste, summarize the pasted/uploaded content.
-- If input type is Video Link, use the video link plus any title/topic/description provided by the user.
-- If only a raw video link is provided and no title/topic is clear, do not pretend you watched the video. Create general notes from available text and mention that transcript extraction is not added yet.
-- Return only JSON.
+- If input type is Upload / Paste, summarize the pasted/uploaded content in this structure.
+- If input type is Video Link, use the video link plus any title/topic/description provided. If you can't access it, create general notes on the topic.
+- Return ONLY JSON.
 ${isVideo ? "Important: For video link mode, focus on the video title/topic/details supplied by the user. Do not claim to access full transcript." : ""}
         `,
       },
     ],
   });
 
-  const content = response.choices?.[0]?.message?.content;
+  const content = response.data?.choices?.[0]?.message?.content;
   const data = parseJson(content);
 
   const title = cleanText(data.title, "Generated Notes");
   const summary = cleanText(data.summary, "No summary generated.");
-  const points = cleanArray(data.points);
-  const revisionLine = cleanText(
-    data.revisionLine,
-    "Revise the summary and key points carefully."
-  );
-
-  if (!points.length) {
-    throw new Error("AI did not return valid key points.");
-  }
 
   return {
     title,
     summary,
-    points,
-    revisionLine,
+    level1_beginner: data.level1_beginner || {},
+    level2_foundation: data.level2_foundation || {},
+    level3_technical: data.level3_technical || {},
+    level4_advanced: data.level4_advanced || {},
+    level5_expert: data.level5_expert || {},
+    rememberThis: cleanText(data.rememberThis, "Revise carefully."),
+    practiceQuestion: cleanText(data.practiceQuestion, "")
   };
 }
 
 export async function generateQuizWithAI(input, inputType, questionCount) {
   const safeCount = Math.min(Math.max(Number(questionCount) || 5, 1), 20);
 
-  const response = await createGroqCompletion("generateQuizWithAI", {
+  const response = await api.post("/ai/chat/complete", {
     model: MODEL,
     temperature: 0.3,
     max_completion_tokens: 1800,
@@ -220,7 +161,7 @@ Rules:
     ],
   });
 
-  const content = response.choices?.[0]?.message?.content;
+  const content = response.data?.choices?.[0]?.message?.content;
   const data = parseJson(content);
 
   if (!Array.isArray(data.questions)) {
@@ -270,29 +211,58 @@ export async function* streamAIChatResponse(messages) {
     model: MODEL,
     messages: messages,
     temperature: 0.4,
-    stream: true,
   };
-  const responseStream = await createGroqCompletion("streamAIChatResponse", payload);
 
-  for await (const chunk of responseStream) {
-    const text = chunk.choices[0]?.delta?.content || "";
-    yield text;
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const user = auth.currentUser;
+  const token = user ? await user.getIdToken() : "";
+
+  const response = await fetch(`${API_URL}/ai/chat/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI stream request failed: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop(); // keep incomplete line for next chunk
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const dataStr = line.slice(6);
+        if (dataStr.trim() === "[DONE]") continue;
+        try {
+          const json = JSON.parse(dataStr);
+          const text = json.choices[0]?.delta?.content || "";
+          if (text) yield text;
+        } catch (e) {}
+      }
+    }
   }
 }
 
-/**
- * Generates a complete chat completion from Groq (non-streaming).
- * 
- * @param {Array<object>} messages - Message list in the format [{ role, content }].
- * @returns {Promise<string>} Full content string returned by the AI.
- */
 export async function generateChatCompletion(messages) {
-  const response = await createGroqCompletion("generateChatCompletion", {
+  const response = await api.post("/ai/chat/complete", {
     model: MODEL,
     messages: messages,
     temperature: 0.3,
   });
 
-  return response.choices[0]?.message?.content || "";
+  return response.data?.choices?.[0]?.message?.content || "";
 }
 

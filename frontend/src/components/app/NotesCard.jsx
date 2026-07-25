@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import MarkdownRenderer from "./MarkdownRenderer";
 
 /**
@@ -32,12 +32,14 @@ export default function NotesCard({
   const [savedId, setSavedId] = useState(dbNoteId);
 
   // Sync internal state when parent state updates
-  if (saved && saveStatus === "unsaved") {
-    setSaveStatus("saved");
-  }
-  if (dbNoteId && !savedId) {
-    setSavedId(dbNoteId);
-  }
+  useEffect(() => {
+    if (saved && saveStatus === "unsaved") {
+      setSaveStatus("saved");
+    }
+    if (dbNoteId && !savedId) {
+      setSavedId(dbNoteId);
+    }
+  }, [saved, saveStatus, dbNoteId, savedId]);
 
   const handleCopyMarkdown = async () => {
     try {
@@ -239,3 +241,4 @@ export default function NotesCard({
     </div>
   );
 }
+

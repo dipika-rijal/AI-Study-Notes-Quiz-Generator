@@ -23,6 +23,8 @@ import CreateQuiz from "./components/app/CreateQuiz";
 import History from "./pages/History";
 import FocusMode from "./pages/FocusMode";
 import Settings from "./pages/Settings";
+import Tutor from "./pages/Tutor";
+import Planner from "./pages/Planner";
 import EditProfileModal from "./components/modals/EditProfileModal";
 
 import ProtectedRoute from "./components/routes/ProtectedRoute";
@@ -124,6 +126,8 @@ export default function App() {
           <Route index element={<Home user={workspaceUser} />} />
           <Route path="notes" element={<CreateNotes />} />
           <Route path="quiz" element={<CreateQuiz />} />
+          <Route path="tutor" element={<Tutor />} />
+          <Route path="planner" element={<Planner />} />
           <Route path="history" element={<History />} />
           <Route path="focus" element={<FocusMode />} />
           <Route

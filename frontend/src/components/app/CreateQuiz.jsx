@@ -2,16 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import pdfToText from "react-pdftotext";
 import QuizReview from "./QuizReview";
-
-const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000"
-).replace(/\/api\/?$/, "");
+import api from "../../api/axios";
 
 const SOURCE_OPTIONS = [
-  { value: "file", label: "Upload Files" },
-  { value: "image", label: "Upload Image" }
+  { value: "file", label: "Upload Files" }
 ];
 
 const QUESTION_COUNT_OPTIONS = [5, 10, 15, 20];
@@ -149,9 +143,8 @@ export default function CreateQuiz() {
     appendMessage(createMessage("assistant", "Opening your saved study history..."));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/history?type=notes`);
-      if (!response.ok) throw new Error("Could not load history.");
-      const result = await response.json();
+      const response = await api.get("/history?type=notes");
+      const result = response.data;
       const noteItems = (result.items || []).filter((item) => item.type === "note").slice(0, 8);
 
       setHistoryItems(noteItems);
@@ -178,10 +171,8 @@ export default function CreateQuiz() {
   }
 
   async function loadSavedNote(noteId) {
-    const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`);
-    if (!response.ok) throw new Error("Saved note could not be loaded.");
-    const result = await response.json();
-    return result.note;
+    const response = await api.get(`/notes/${noteId}`);
+    return response.data.note;
   }
 
   const loadSavedQuiz = useCallback(async (savedQuizId) => {
@@ -189,21 +180,8 @@ export default function CreateQuiz() {
     setErrorMessage("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/quizzes/${savedQuizId}`);
-      if (!response.ok) {
-        if (response.status === 404) throw new Error("This quiz no longer exists.");
-        
-        let errorMessage = "Saved quiz could not be loaded.";
-        try {
-          const errorData = await response.json();
-          if (errorData?.message) errorMessage = errorData.message;
-        } catch (e) {
-          // ignore
-        }
-        throw new Error(errorMessage);
-      }
-      const result = await response.json();
-      const savedQuiz = result.quiz;
+      const response = await api.get(`/quizzes/${savedQuizId}`);
+      const savedQuiz = response.data.quiz;
 
       setTopic(savedQuiz.topic || "Saved Quiz");
       setSourceType(savedQuiz.sourceType || "notes");
@@ -242,10 +220,6 @@ export default function CreateQuiz() {
     if (value === "file") {
       setStep("waitingForUpload");
       appendMessage(createMessage("assistant", "Upload a document for the quiz."));
-    } else if (value === "image") {
-      setErrorMessage('Image analysis is not enabled by the current AI API. Please upload a file.');
-      setStep("chooseSource");
-      setSourceType("");
     }
   }
 
@@ -358,22 +332,15 @@ export default function CreateQuiz() {
     appendMessage(createMessage("assistant", "Generating your quiz..."));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/quiz/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic,
-          sourceType,
-          content,
-          numberOfQuestions: questionCount,
-          difficulty: selectedDifficulty
-        })
+      const response = await api.post("/quiz/generate", {
+        topic,
+        sourceType,
+        content,
+        numberOfQuestions: questionCount,
+        difficulty: selectedDifficulty
       });
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || "Quiz generation failed.");
-      }
+      const result = response.data;
 
       const normalizedQuiz = normalizeApiQuiz(result);
       if (!normalizedQuiz.questions.length) {
@@ -399,18 +366,13 @@ export default function CreateQuiz() {
     setIsChecking(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/quiz/check-answer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quizId: quiz.quizId,
-          questionIndex: currentQuestionIndex,
-          selectedAnswer
-        })
+      const response = await api.post("/quiz/check-answer", {
+        quizId: quiz.quizId,
+        questionIndex: currentQuestionIndex,
+        selectedAnswer
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Answer check failed.");
+      const result = response.data;
 
       setAnswers((previous) => ({
         ...previous,
@@ -455,14 +417,10 @@ export default function CreateQuiz() {
         selectedOptionIndex: OPTION_LETTERS.indexOf(ans.selectedAnswer)
       }));
 
-      await fetch(`${API_BASE_URL}/api/quiz-attempts`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quizId: quiz.quizId,
-          selectedAnswers,
-          status
-        })
+      await api.post("/quiz-attempts", {
+        quizId: quiz.quizId,
+        selectedAnswers,
+        status
       });
     } catch (error) {
       console.error("Could not save quiz attempt", error);
@@ -495,14 +453,15 @@ export default function CreateQuiz() {
   async function saveFinalScore() {
     if (!quiz?.quizId) return;
 
+    const missedConcepts = Object.values(answers)
+      .filter((a) => !a.correct && a.explanation?.core_concept)
+      .map((a) => a.explanation.core_concept);
+
     try {
-      await fetch(`${API_BASE_URL}/api/quizzes/${quiz.quizId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          score: correctCount,
-          totalQuestions
-        })
+      await api.put(`/quizzes/${quiz.quizId}`, {
+        score: correctCount,
+        totalQuestions,
+        missedConcepts
       });
     } catch (error) {
       console.error("Could not save quiz score", error);
@@ -685,6 +644,13 @@ export default function CreateQuiz() {
                   </p>
 
                   <div className="mt-4 space-y-3 text-sm leading-6">
+                    {currentAnswer.explanation?.core_concept && (
+                      <div className="mb-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 p-4 border border-purple-100 dark:border-purple-800/50">
+                        <p className="font-black text-purple-900 dark:text-purple-300">🧠 Core Concept:</p>
+                        <p className="font-semibold text-purple-800 dark:text-purple-400">{currentAnswer.explanation.core_concept}</p>
+                      </div>
+                    )}
+
                     <div>
                       <p className="font-black text-[#15132b] dark:text-[#ececec]">Why this is correct:</p>
                       <p className="font-semibold text-[#655d80] dark:text-[#b4b4b4]">{currentAnswer.explanation?.correct}</p>
@@ -700,6 +666,13 @@ export default function CreateQuiz() {
                         ))}
                       </div>
                     </div>
+
+                    {currentAnswer.explanation?.memory_trick && (
+                      <div className="mt-4 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 p-4 border border-yellow-100 dark:border-yellow-800/50">
+                        <p className="font-black text-yellow-900 dark:text-yellow-300">💡 Memory Trick:</p>
+                        <p className="font-semibold text-yellow-800 dark:text-yellow-400">{currentAnswer.explanation.memory_trick}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-5 flex justify-between">
