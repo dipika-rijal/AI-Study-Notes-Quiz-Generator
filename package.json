@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "cors": "^2.8.6",
+    "express-mongo-sanitize": "^2.2.0",
     "framer-motion": "^12.42.2"
   }
 }

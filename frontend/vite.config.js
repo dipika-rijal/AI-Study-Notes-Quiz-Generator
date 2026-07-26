@@ -7,5 +7,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: []
+    }
   };
 });

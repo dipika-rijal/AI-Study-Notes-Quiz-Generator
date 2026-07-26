@@ -37,6 +37,7 @@ export default function Hero({ openModal }) {
             onClick={() => openModal("notes")}
             size="lg"
             variant="primary"
+            style={{ background: "#171a14", color: "#ffffff", boxShadow: "0 8px 18px rgba(23,26,20,.2)" }}
           >
             Make Notes →
           </Button>
@@ -45,6 +46,7 @@ export default function Hero({ openModal }) {
             onClick={() => openModal("quiz")}
             size="lg"
             variant="outline"
+            style={{ color: "#252a20", borderColor: "#b9c9b0", background: "#ffffff" }}
           >
             ◎ Start Quiz
           </Button>

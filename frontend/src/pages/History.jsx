@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { auth } from "../config/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../api/axios";
@@ -31,7 +33,10 @@ export default function History() {
   }
 
   useEffect(() => {
-    loadHistory(activeTab);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) loadHistory(activeTab);
+    });
+    return () => unsubscribe();
   }, [activeTab]);
 
   const counts = data?.counts || { all: 0, notes: 0, quizzes: 0 };

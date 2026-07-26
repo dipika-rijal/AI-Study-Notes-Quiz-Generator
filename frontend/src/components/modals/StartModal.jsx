@@ -1,4 +1,4 @@
-﻿import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Modal, Card, Badge } from "../../design-system";
 
 export default function StartModal({
@@ -67,13 +67,13 @@ export default function StartModal({
       closeOnOverlayClick={true}
       closeOnEscape={true}
     >
-      <h2 className="text-center text-3xl font-black tracking-[-0.05em] text-[#15132b] md:text-5xl">
+      <h2 className="text-center text-3xl font-black tracking-[-0.05em] text-[var(--color-text-primary)] md:text-5xl">
         {isQuiz
           ? "How would you like to create your quiz?"
           : "How would you like to create your note?"}
       </h2>
 
-      <p className="mx-auto mt-4 max-w-xl text-center leading-7 text-[#77718f]">
+      <p className="mx-auto mt-4 max-w-xl text-center leading-7 text-[var(--color-text-secondary)]">
         {user
           ? "Choose a starting method and continue inside your StudyGen workspace."
           : "Login or create an account first, then continue to the generator workspace."}
@@ -95,11 +95,11 @@ export default function StartModal({
           >
             <div className="mb-4 text-4xl">{card.icon}</div>
 
-            <h3 className="mb-2 text-lg font-black text-[#15132b]">
+            <h3 className="mb-2 text-lg font-black text-[var(--color-text-primary)]">
               {card.title}
             </h3>
 
-            <p className="text-sm leading-6 text-[#77718f]">{card.text}</p>
+            <p className="text-sm leading-6 text-[var(--color-text-secondary)]">{card.text}</p>
           </Card>
         ))}
       </div>

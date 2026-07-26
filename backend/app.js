@@ -50,8 +50,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true, limit: "50kb" }));
-app.use(mongoSanitize());
-
+// app.use(mongoSanitize());
 app.use("/api", generalLimiter);
 
 app.get("/api/health", function (req, res) {

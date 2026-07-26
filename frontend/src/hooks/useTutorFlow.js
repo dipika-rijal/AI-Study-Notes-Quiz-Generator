@@ -75,7 +75,7 @@ export function useTutorFlow(initialConversationId = null) {
       } catch (err) {
         console.error("Auto-save failed", err);
       }
-    }, 1500);
+    }, 5000);
 
     return () => clearTimeout(handler);
   }, [messages, loadingState, conversationId]);

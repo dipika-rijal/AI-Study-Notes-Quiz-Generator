@@ -12,6 +12,7 @@ import Hero from "./components/landing/Hero";
 import Features from "./components/landing/Features";
 import Process from "./components/landing/Process";
 import CTA from "./components/landing/CTA";
+import Contact from "./components/landing/Contact";
 
 import StartModal from "./components/modals/StartModal";
 import AuthModal from "./components/auth/AuthModal";
@@ -29,6 +30,7 @@ import EditProfileModal from "./components/modals/EditProfileModal";
 
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import GuestRoute from "./components/routes/GuestRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function LandingPage({ setModalType, setAuthMode }) {
   return (
@@ -43,6 +45,7 @@ function LandingPage({ setModalType, setAuthMode }) {
         <Features />
         <Process />
         <CTA openModal={setModalType} />
+        <Contact />
       </main>
 
       <Footer />
@@ -94,7 +97,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <Routes>
         <Route
           path="/"
@@ -166,6 +169,6 @@ export default function App() {
           />
         </AppThemeProvider>
       )}
-    </>
+    </ErrorBoundary>
   );
 }

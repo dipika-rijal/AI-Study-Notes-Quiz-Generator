@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { auth } from "../config/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarDays,
@@ -738,20 +740,31 @@ export default function Planner() {
   const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Load plans list on mount
+  // Load plans list on mount — wait until Firebase auth is ready
   const loadPlans = useCallback(async () => {
     setListLoading(true);
+    setError("");
     try {
       const result = await getPlans();
       setPlans(result.plans || []);
     } catch (err) {
-      setError("Could not load plans. Make sure backend is running.");
+      // Silently ignore 401 errors (unauthenticated) — the ProtectedRoute
+      // guards this page so 401 means the token is still loading.
+      if (err?.response?.status !== 401) {
+        setError("Could not load plans. Make sure backend is running.");
+      }
     } finally {
       setListLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadPlans(); }, [loadPlans]);
+  // Wait for Firebase auth state to be confirmed before fetching
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) loadPlans();
+    });
+    return () => unsubscribe();
+  }, [loadPlans]);
 
   async function handleGenerate(payload) {
     setError("");
@@ -763,7 +776,12 @@ export default function Planner() {
       setView("detail");
       loadPlans();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to generate plan. Please try again.");
+      if (err?.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorMsgs = err.response.data.errors.map(e => `${e.path || e.param}: ${e.msg}`).join(", ");
+        setError(`Validation Error: ${errorMsgs}`);
+      } else {
+        setError(err?.response?.data?.message || err?.message || "Failed to generate plan. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

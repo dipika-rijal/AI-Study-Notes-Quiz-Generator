@@ -167,7 +167,7 @@ export default function NotesCard({
     // Cleanup iframe
     setTimeout(() => {
       document.body.removeChild(iframe);
-    }, 1500);
+    }, 5000);
   };
 
   return (

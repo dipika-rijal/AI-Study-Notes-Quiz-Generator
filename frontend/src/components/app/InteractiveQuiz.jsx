@@ -230,6 +230,16 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
     submitQuiz();
   }
 
+  function handleRetry() {
+    setSelectedAnswers({});
+    setCurrentQuestionIndex(0);
+    setSubmitted(false);
+    setScore(null);
+    setFeedback(null);
+    setAttemptId(null);
+    setIsSaved(false);
+  }
+
   return (
     <div className="w-full max-w-3xl mx-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-6 md:p-8 shadow-sm">
       {!submitted ? (
@@ -351,6 +361,7 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
           isSaved={isSaved}
           onSave={handleSaveAttempt}
           onUnsave={handleUnsaveAttempt}
+          onRetry={handleRetry}
         />
       )}
     </div>

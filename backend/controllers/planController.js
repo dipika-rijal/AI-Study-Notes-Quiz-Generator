@@ -10,7 +10,7 @@ const { body, validationResult } = require("express-validator");
 exports.validatePlan = [
   body("goal").trim().notEmpty().escape().isLength({ max: 500 }),
   body("subjects").optional().isArray({ max: 50 }),
-  body("examDate").isISO8601().toDate(),
+  body("examDate").custom((val) => !isNaN(Date.parse(val))).withMessage("Invalid date"),
   body("availableHours").optional().isFloat({ min: 0.5, max: 24 }),
   body("currentLevel").optional().isIn(["beginner", "intermediate", "advanced"]),
   body("weakTopics").optional().isArray({ max: 100 }),

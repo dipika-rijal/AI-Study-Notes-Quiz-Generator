@@ -549,7 +549,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
       } catch (err) {
         console.error("Auto-save failed", err);
       }
-    }, 1500);
+    }, 5000);
 
     return () => clearTimeout(handler);
   }, [messages, loadingState, conversationStep, conversationId, conversationTitle, conversationSummary, currentTopic]);

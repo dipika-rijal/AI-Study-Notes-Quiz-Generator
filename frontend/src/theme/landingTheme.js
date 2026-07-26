@@ -1,5 +1,5 @@
 export const landingTheme = {
-  // Brand Light Theme tokens
+  // Public pages remain light, while keeping the original purple accents.
   bgPrimary: "#fafafa",
   bgSecondary: "#ffffff",
   bgTertiary: "#f3f3f1",
@@ -8,8 +8,7 @@ export const landingTheme = {
   textPrimary: "#191919",
   textSecondary: "#62625f",
   textMuted: "#8b8b87",
-  
-  glowPurple: "#6d28d9", // Brand primary glow
+  glowPurple: "#6d28d9",
   glowCyan: "#0891b2",
   glowPink: "#db2777",
   glowOrange: "#d97706",
