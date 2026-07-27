@@ -3,9 +3,15 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { streamAIChatResponse, generateChatCompletion } from "../services/ai";
 import { getConversation, saveConversation } from "../api/conversationApi";
 import { getPreferences } from "../api/preferenceApi";
+import { extractJson } from "../utils/extractJson";
+import { normalizeFlashcards } from "../utils/flashcards";
 
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+const FLASHCARD_FORMAT_INSTRUCTION = `Return ONLY valid JSON in this exact shape:
+{"flashcards":[{"front":"a concise question or term","back":"the answer or explanation"}]}
+Create exactly 5 complete cards. Do not add markdown, code fences, or any text outside the JSON.`;
 
 const INITIAL_ACTION_OPTIONS = [
   { value: "intent:topic", label: "📚 Generate Notes", icon: "📚" },
@@ -280,7 +286,7 @@ ${actionInstructions[action] || actionInstructions.notes}`
       content: `Document name: ${fileName}
 
 Extracted PDF text:
-${content.slice(0, 8000)}`
+${content.slice(0, 24000)}`
     }
   ];
 }
@@ -549,7 +555,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
       } catch (err) {
         console.error("Auto-save failed", err);
       }
-    }, 1500);
+    }, 5000);
 
     return () => clearTimeout(handler);
   }, [messages, loadingState, conversationStep, conversationId, conversationTitle, conversationSummary, currentTopic]);
@@ -577,6 +583,47 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         msg.id === msgId ? { ...msg, ...partialData } : msg
       )
     );
+  }, []);
+
+  const recordQuizCompletion = useCallback((quizMessageId, result) => {
+    setMessages((previous) => {
+      const quizMessage = previous.find((message) => message.id === quizMessageId);
+      if (!quizMessage) return previous;
+
+      const completedQuiz = {
+        ...quizMessage,
+        quizState: result.quizState
+      };
+      const missed = getMissedQuestionsFromMessage(completedQuiz);
+      const missedTopics = missed
+        .map((item) => item.question.replace(/[^\w\s]/g, " ").split(/\s+/).filter((word) => word.length > 4).slice(0, 3).join(" "))
+        .filter(Boolean)
+        .slice(0, 4);
+      const topic = result.topic || completedQuiz.data?.topic || completedQuiz.topic || "this quiz";
+      const reviewText = missedTopics.length
+        ? missedTopics.join(", ")
+        : "No missed topics — great work!";
+
+      const resultMessage = {
+        id: `quiz-result-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        role: "assistant",
+        content: `You scored ${result.score}/${result.totalQuestions} on ${topic}. Here's what to review: ${reviewText}.`,
+        type: "text",
+        status: "success",
+        quizResult: {
+          topic,
+          score: result.score,
+          totalQuestions: result.totalQuestions,
+          missedTopics,
+          context: summarizeQuizForContext(completedQuiz)
+        },
+        timestamp: new Date()
+      };
+
+      return previous
+        .map((message) => message.id === quizMessageId ? completedQuiz : message)
+        .concat(resultMessage);
+    });
   }, []);
 
   /**
@@ -696,7 +743,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === messageId
-              ? { ...msg, content: displayMessage, status: "error" }
+              ? { ...msg, content: displayMessage, type: "text", status: "error" }
               : msg
           )
         );
@@ -727,23 +774,33 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
       const response = await generateChatCompletion(promptHistory);
       let parsedData = null;
 
-      // Extract JSON block if LLM wrapped it in markdown code fences
-      let jsonString = response;
-      const jsonStart = response.indexOf("```json");
-      if (jsonStart !== -1) {
-        const jsonEnd = response.lastIndexOf("```");
-        jsonString = response.slice(jsonStart + 7, jsonEnd).trim();
-      } else {
-        const startBrace = response.indexOf("{");
-        const startBracket = response.indexOf("[");
-        const start = startBrace !== -1 && (startBracket === -1 || startBrace < startBracket) ? startBrace : startBracket;
-        const end = response.lastIndexOf(start === startBrace ? "}" : "]");
-        if (start !== -1 && end !== -1) {
-          jsonString = response.slice(start, end + 1);
+      parsedData = extractJson(response);
+
+      if (messageType === "flashcards") {
+        const flashcards = normalizeFlashcards(parsedData);
+        if (!flashcards.length) {
+          throw new Error("AI response did not include complete flashcards.");
         }
+        parsedData = { flashcards };
       }
 
-      parsedData = JSON.parse(jsonString);
+      if (messageType === "quiz") {
+        try {
+          const questionsToSave = Array.isArray(parsedData) ? parsedData : (parsedData.questions || []);
+          const res = await api.post("/quizzes", {
+            topic: currentTopic || "Study quiz",
+            questions: questionsToSave,
+            sourceType: "topic",
+            difficulty: "medium",
+            totalQuestions: questionsToSave.length
+          });
+          if (res.data && res.data.quiz) {
+            parsedData.quizId = res.data.quiz._id;
+          }
+        } catch (err) {
+          console.error("Failed to persist generated quiz to database", err);
+        }
+      }
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -788,7 +845,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
     });
 
     try {
-      const endpoint = retry ? "/quiz/retry" : "/quiz/generate";
+      const endpoint = retry ? "/quizzes/retry" : "/quizzes/generate";
       const response = await api.post(endpoint, payload);
       const result = response.data;
 
@@ -923,7 +980,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         });
       } else if (query.includes("flashcard") || query.includes("cards")) {
         await generateStructuredResponse([
-          { role: "system", content: `You are an assistant. Generate flashcards based on previous context. Output ONLY structured JSON matching the flashcards requirements. No intro/outro.${contextPrompt}` },
+          { role: "system", content: `You are an assistant. Generate flashcards based on previous context. ${FLASHCARD_FORMAT_INSTRUCTION}${contextPrompt}` },
           ...recentMessages
         ], "flashcards");
       } else {
@@ -1097,7 +1154,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         ], "quiz");
       } else if (followUpAction === "flashcards") {
         await generateStructuredResponse([
-          { role: "system", content: `You are an assistant. Generate flashcards based on the notes in the previous context. Output ONLY structured JSON matching the flashcards requirements. No intro/outro.${contextPrompt}` },
+          { role: "system", content: `You are an assistant. Generate flashcards based on the notes in the previous context. ${FLASHCARD_FORMAT_INSTRUCTION}${contextPrompt}` },
           ...recentMessages
         ], "flashcards");
       } else if (followUpAction === "save") {
@@ -1151,7 +1208,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
             role: "system",
             content: "You are an AI Study Assistant specialized in educational documents. Generate exactly 5 multiple choice questions based only on the extracted PDF text. Output ONLY a valid JSON array of objects containing question, options, correct answer, and explanation. Do not invent missing document content. Do not add intro/outro text."
           },
-          { role: "user", content: `Document name: ${uploadedFile.name}\n\nDocument text:\n${contentSource.slice(0, 8000)}` }
+          { role: "user", content: `Document name: ${uploadedFile.name}\n\nDocument text:\n${contentSource.slice(0, 24000)}` }
         ];
         await generateStructuredResponse(promptHistory, "quiz");
       } else if (optionValue === "summarize") {
@@ -1217,22 +1274,22 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
   }, [conversationStep, currentTopic, uploadedFile, pastedContent, messages, appendMessage, generateStructuredResponse, streamAIResponse, startIntentFlow]);
 
   /**
-   * Handles a file upload (PDF/TXT/MD) and initiates document flow.
+   * Handles a readable study document and initiates document flow.
    */
   const handleFileUpload = useCallback(async (fileName, fileText, fileSize, metadata = {}) => {
     setErrorMessage("");
 
-    if (fileSize > 2 * 1024 * 1024) {
-      setErrorMessage("File is too large. Please upload files under 2MB.");
+    if (fileSize > 10 * 1024 * 1024) {
+      setErrorMessage("File is too large. Please upload files under 10MB.");
       return;
     }
 
     const cleanFileName = fileName.toLowerCase();
     const isPDF = cleanFileName.endsWith(".pdf");
-    const isText = cleanFileName.endsWith(".txt") || cleanFileName.endsWith(".md");
+    const isText = [".txt", ".md", ".csv", ".json", ".html", ".htm"].some((extension) => cleanFileName.endsWith(extension));
 
     if (!isPDF && !isText) {
-      setErrorMessage("Unsupported file type. Please upload a .pdf, .txt, or .md file.");
+      setErrorMessage("Unsupported file type. Upload a PDF, TXT, Markdown, CSV, JSON, or HTML file.");
       return;
     }
 
@@ -1379,7 +1436,8 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
       resetChat,
       regenerateResponse: regenerateLastResponse,
       saveNote: handleSaveToHistory,
-      updateMessageData
+      updateMessageData,
+      recordQuizCompletion
     }
   };
 }

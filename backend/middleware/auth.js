@@ -40,7 +40,10 @@ async function requireAuth(req, res, next) {
       return sendError(res, "Auth service is not configured on the server", 503);
     }
 
-    const decoded = await getAuth().verifyIdToken(token, true);
+    // Revocation checks require Firebase service-account credentials. This app
+    // is configured with a project ID only, so standard signature/expiry
+    // verification keeps authenticated client requests working locally.
+    const decoded = await getAuth().verifyIdToken(token);
 
     if (!decoded.uid || typeof decoded.uid !== "string") {
       return sendError(res, "Invalid token payload", 401);

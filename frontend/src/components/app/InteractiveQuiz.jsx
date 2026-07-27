@@ -72,7 +72,7 @@ function optionExplanation(question, letter) {
   );
 }
 
-export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpdate }) {
+export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpdate, onQuizSubmitted }) {
   const questions = useMemo(() => normalizeQuestions(data), [data]);
   const restoredState = normalizeState(initialAnswers);
 
@@ -177,15 +177,7 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
     setFeedback(localFeedback);
     setIsSaved(false);
     setSubmitted(true);
-    setIsSubmitting(false);
-  }
 
-  async function handleSaveAttempt() {
-    if (!data?.quizId) return;
-    
-    setIsSubmitting(true);
-    setSubmitError("");
-    
     try {
       const selectedPayload = questions.map((question, index) => {
         const selectedLetter = selectedLetterFor(question, selectedAnswers[index]);
@@ -198,12 +190,30 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
 
       const response = await api.post("/quiz-attempts", {
         quizId: data.quizId,
-        selectedAnswers: selectedPayload
+        selectedAnswers: selectedPayload,
+        status: "completed"
       });
 
       const result = response.data;
-      setAttemptId(result.attempt?._id || null);
+      const savedAttemptId = result.attempt?._id || null;
+      setAttemptId(savedAttemptId);
       setIsSaved(true);
+      onQuizSubmitted?.({
+        score: localScore,
+        totalQuestions,
+        topic: data?.topic || "Study quiz",
+        quizState: {
+          selectedAnswers,
+          currentQuestionIndex,
+          submitted: true,
+          openedExplanations,
+          attemptId: savedAttemptId,
+          score: localScore,
+          feedback: localFeedback,
+          isSaved: true,
+          totalQuestions
+        }
+      });
     } catch (error) {
       setSubmitError(error.message || "Failed to save attempt.");
       setIsSaved(false);
@@ -228,6 +238,16 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
       return;
     }
     submitQuiz();
+  }
+
+  function handleRetry() {
+    setSelectedAnswers({});
+    setCurrentQuestionIndex(0);
+    setSubmitted(false);
+    setScore(null);
+    setFeedback(null);
+    setAttemptId(null);
+    setIsSaved(false);
   }
 
   return (
@@ -342,16 +362,23 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
           </motion.div>
         </AnimatePresence>
       ) : (
-        <QuizReview 
-          quiz={{ questions }}
-          answers={feedback || []}
-          score={score ?? 0}
-          totalQuestions={totalQuestions}
-          attemptId={attemptId}
-          isSaved={isSaved}
-          onSave={handleSaveAttempt}
-          onUnsave={handleUnsaveAttempt}
-        />
+        <div className="space-y-4">
+          {submitError && (
+            <div className="p-4 rounded-xl border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-sm font-medium text-[var(--color-warning-text)]">
+              {submitError}
+            </div>
+          )}
+          <QuizReview 
+            quiz={{ questions }}
+            answers={feedback || []}
+            score={score ?? 0}
+            totalQuestions={totalQuestions}
+            attemptId={attemptId}
+            isSaved={isSaved}
+            onUnsave={handleUnsaveAttempt}
+            onRetry={handleRetry}
+          />
+        </div>
       )}
     </div>
   );

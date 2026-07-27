@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const router = express.Router();
 const { requireAuth } = require("../middleware/auth.js");
 
@@ -9,13 +9,14 @@ const {
   getNoteById,
   createNote,
   updateNote,
-  deleteNote
+  deleteNote,
+  validateNote
 } = require("../controllers/noteController.js");
 
 router.get("/", getNotes);
 router.get("/:id", getNoteById);
-router.post("/", createNote);
-router.put("/:id", updateNote);
+router.post("/", validateNote, createNote);
+router.put("/:id", validateNote, updateNote);
 router.delete("/:id", deleteNote);
 
 module.exports = router;

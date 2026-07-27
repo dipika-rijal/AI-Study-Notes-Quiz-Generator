@@ -11,6 +11,7 @@ export interface ModalProps {
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
+  tone?: 'default' | 'dark';
 }
 
 const sizeStyles = {
@@ -41,6 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   closeOnOverlayClick = true,
   closeOnEscape = true,
+  tone = 'default',
 }) => {
   // Handle escape key
   useEffect(() => {
@@ -84,12 +86,12 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modalStyle = {
     position: 'relative' as const,
-    backgroundColor: 'var(--color-bg-secondary)',
+    backgroundColor: tone === 'dark' ? '#121417' : 'var(--color-bg-secondary)',
     borderRadius: borderRadiusTokens.xl,
     boxShadow: shadowTokens['2xl'],
-    border: '1px solid var(--color-border)',
+    border: tone === 'dark' ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid var(--color-border)',
     maxHeight: '90vh',
-    overflow: 'auto',
+    overflow: 'hidden',
     ...sizeStyles[size],
   };
 
@@ -116,9 +118,9 @@ export const Modal: React.FC<ModalProps> = ({
     width: '36px',
     height: '36px',
     borderRadius: borderRadiusTokens.md,
-    backgroundColor: 'var(--color-bg-tertiary)',
-    border: '1px solid var(--color-border)',
-    color: 'var(--color-text-secondary)',
+    backgroundColor: tone === 'dark' ? '#20242a' : 'var(--color-bg-tertiary)',
+    border: tone === 'dark' ? '1px solid rgba(255,255,255,0.10)' : '1px solid var(--color-border)',
+    color: tone === 'dark' ? '#f4f4f5' : 'var(--color-text-secondary)',
     fontSize: '20px',
     fontWeight: '900',
     cursor: 'pointer',
@@ -126,7 +128,7 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const contentStyle = {
-    padding: '24px',
+    padding: tone === 'dark' ? '20px' : '24px',
   };
 
   return (

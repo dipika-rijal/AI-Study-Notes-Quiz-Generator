@@ -6,7 +6,7 @@
 function validateEnv() {
   const required = [
     { name: "MONGODB_URI" },
-    { name: "GROQ_API_KEY",        fallback: "VITE_GROQ_API_KEY" },
+    { name: "GROQ_API_KEY" },
     { name: "FIREBASE_PROJECT_ID", fallback: "VITE_FIREBASE_PROJECT_ID" }
   ];
 

@@ -1,4 +1,18 @@
 const Note = require("../models/Note.js");
+const { body, validationResult } = require("express-validator");
+
+const validateNote = [
+  body("title").trim().notEmpty().isLength({ max: 200 }),
+  body("body").notEmpty(),
+  body("category").optional().isString(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+    next();
+  }
+];
 
 async function getNotes(req, res, next) {
   try {
@@ -69,6 +83,7 @@ module.exports = {
   getNoteById,
   createNote,
   updateNote,
-  deleteNote
+  deleteNote,
+  validateNote
 };
 

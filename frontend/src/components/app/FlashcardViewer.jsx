@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import Flashcard from "./Flashcard";
+import { normalizeFlashcards } from "../../utils/flashcards";
 
 export default function FlashcardViewer({ data }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [masteredCount, setMasteredCount] = useState(0);
   const [practiceCount, setPracticeCount] = useState(0);
 
-  const cards = data && Array.isArray(data.flashcards) ? data.flashcards : [];
+  const cards = normalizeFlashcards(data);
 
   useEffect(() => {
     const handleKeyDown = (e) => {

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/axios";
 
 export function useStreak() {
@@ -10,7 +10,7 @@ export function useStreak() {
 
     async function load() {
       try {
-        const res = await api.get("/streak");
+        const res = await api.get("/streaks");
         if (!cancelled) setStreak(res.data);
       } catch (err) {
         console.error("Failed to load streak", err);

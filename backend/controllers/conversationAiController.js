@@ -1,4 +1,4 @@
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 
 function getGroqApiKey() {
   return process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "";
@@ -6,19 +6,26 @@ function getGroqApiKey() {
 
 exports.generateChatCompletion = async (req, res, next) => {
   try {
-    const { model, messages, temperature, max_completion_tokens, response_format } = req.body;
+    const { messages, temperature, max_completion_tokens, response_format } = req.body;
     
+    if (!Array.isArray(messages) || messages.length > 50) {
+      return res.status(400).json({ success: false, message: "Invalid or too many messages" });
+    }
+    if (messages.some(m => typeof m.content === "string" && m.content.length > 20000)) {
+      return res.status(400).json({ success: false, message: "Message content too long" });
+    }
+
     const apiKey = getGroqApiKey();
     if (!apiKey || apiKey === "PASTE_YOUR_GROQ_API_KEY_HERE") {
       throw new Error("Groq API key is missing on the backend.");
     }
 
     const payload = {
-      model: model || GROQ_MODEL,
+      model: GROQ_MODEL,
       temperature: temperature ?? 0.35,
       messages: messages
     };
-    if (max_completion_tokens) payload.max_completion_tokens = max_completion_tokens;
+    if (max_completion_tokens) payload.max_completion_tokens = Math.min(Number(max_completion_tokens), 2048);
     if (response_format) payload.response_format = response_format;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -32,7 +39,11 @@ exports.generateChatCompletion = async (req, res, next) => {
 
     const body = await response.text();
     if (!response.ok) {
-      throw new Error("Groq API returned " + response.status + ". " + body.slice(0, 300));
+      let groqMessage = "";
+      try { groqMessage = JSON.parse(body)?.error?.message || ""; } catch {}
+      const err = new Error(`Groq API error ${response.status}: ${groqMessage || body.slice(0, 200)}`);
+      err.status = response.status === 429 ? 429 : 502;
+      throw err;
     }
 
     const data = JSON.parse(body);
@@ -44,13 +55,20 @@ exports.generateChatCompletion = async (req, res, next) => {
 
 exports.streamAIChatResponse = async (req, res, next) => {
   try {
-    const { model, messages, temperature } = req.body;
+    const { messages, temperature } = req.body;
     
+    if (!Array.isArray(messages) || messages.length > 50) {
+      return res.status(400).json({ success: false, message: "Invalid or too many messages" });
+    }
+    if (messages.some(m => typeof m.content === "string" && m.content.length > 20000)) {
+      return res.status(400).json({ success: false, message: "Message content too long" });
+    }
+
     const apiKey = getGroqApiKey();
     if (!apiKey) throw new Error("Groq API key is missing on the backend.");
 
     const payload = {
-      model: model || GROQ_MODEL,
+      model: GROQ_MODEL,
       temperature: temperature ?? 0.4,
       messages: messages,
       stream: true
@@ -67,7 +85,11 @@ exports.streamAIChatResponse = async (req, res, next) => {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error("Groq API returned " + response.status + ". " + body.slice(0, 300));
+      let groqMessage = "";
+      try { groqMessage = JSON.parse(body)?.error?.message || ""; } catch {}
+      const err = new Error(`Groq API error ${response.status}: ${groqMessage || body.slice(0, 200)}`);
+      err.status = response.status === 429 ? 429 : 502;
+      throw err;
     }
 
     res.setHeader("Content-Type", "text/event-stream");

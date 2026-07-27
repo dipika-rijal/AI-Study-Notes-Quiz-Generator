@@ -25,11 +25,6 @@ const questionSchema = new mongoose.Schema(
   {
     question: {
       type: String,
-      trim: true,
-      default: "",
-    },
-    questionText: {
-      type: String,
       required: true,
       trim: true,
     },

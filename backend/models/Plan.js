@@ -89,12 +89,15 @@ planSchema.pre("save", function (next) {
   let total = 0;
   let done = 0;
   (this.dailyTasks || []).forEach((day) => {
+    let dayTotalMinutes = 0;
     (day.timeBlocks || []).forEach((block) => {
       (block.tasks || []).forEach((task) => {
         total++;
         if (task.completed) done++;
+        dayTotalMinutes += task.duration || 0;
       });
     });
+    day.totalMinutes = dayTotalMinutes;
   });
   this.totalTasks = total;
   this.completedTasks = done;

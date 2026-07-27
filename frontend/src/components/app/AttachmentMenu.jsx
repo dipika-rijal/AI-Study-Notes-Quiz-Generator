@@ -1,8 +1,7 @@
-import { FileImage, FileText, StickyNote } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 const items = [
-  { id: 'file', label: 'Upload Files', description: 'Summarize a document', icon: FileText },
-  { id: 'image', label: 'Upload Image', description: 'Add a study image', icon: FileImage },
+  { id: 'file', label: 'Upload document', description: 'PDF, TXT, MD, CSV, JSON, or HTML', icon: FileText },
 ];
 
 export default function AttachmentMenu({ onSelect, disabled }) {
