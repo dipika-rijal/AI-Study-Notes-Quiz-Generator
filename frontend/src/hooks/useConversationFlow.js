@@ -1420,6 +1420,11 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
 
   return {
     messages,
+    conversation: {
+      _id: conversationId,
+      title: conversationTitle || "New Chat",
+      messages
+    },
     conversationStep,
     loadingState,
     uploadedFile,

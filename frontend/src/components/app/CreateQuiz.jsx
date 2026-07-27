@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import pdfToText from "react-pdftotext";
 import QuizReview from "./QuizReview";
 import api from "../../api/axios";
@@ -85,6 +85,7 @@ function getWeakAreas(questions, answers, topic) {
 
 export default function CreateQuiz() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -106,6 +107,7 @@ export default function CreateQuiz() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showQuitModal, setShowQuitModal] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -457,11 +459,15 @@ export default function CreateQuiz() {
       restartQuiz();
       return;
     }
-    const saveInProgress = window.confirm("Do you want to save this quiz attempt as 'In Progress'?");
-    if (saveInProgress) {
+    setShowQuitModal(true);
+  }
+
+  async function confirmQuit(shouldSave) {
+    if (shouldSave) {
       await saveAttempt("in_progress");
     }
-    restartQuiz();
+    setShowQuitModal(false);
+    navigate("/app/history");
   }
 
   function goToNextQuestion() {
@@ -784,6 +790,40 @@ export default function CreateQuiz() {
           </button>
         </form>
       </footer>
+
+      {showQuitModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#15132b]/60 backdrop-blur-sm dark:bg-black/60">
+          <div className="w-full max-w-sm rounded-3xl border border-orange-100 bg-white p-6 shadow-xl dark:border-[#424242] dark:bg-[#171717]">
+            <h3 className="mb-2 text-xl font-black tracking-tight text-[#15132b] dark:text-[#ececec]">Quit Quiz?</h3>
+            <p className="mb-6 text-sm font-semibold text-[#655d80] dark:text-[#b4b4b4]">
+              Do you want to save this quiz attempt as 'In Progress'?
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => confirmQuit(true)}
+                className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 px-4 py-3 text-sm font-black text-white shadow-md shadow-orange-100 transition hover:-translate-y-0.5 dark:from-[#10a37f] dark:to-[#05503e] dark:shadow-none"
+              >
+                Save & Quit
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmQuit(false)}
+                className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-red-100 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 dark:shadow-none"
+              >
+                Quit without saving
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowQuitModal(false)}
+                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-black text-gray-600 shadow-sm transition hover:-translate-y-0.5 hover:bg-gray-50 dark:border-[#424242] dark:bg-[#2f2f2f] dark:text-[#b4b4b4] dark:hover:bg-[#424242] dark:shadow-none"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

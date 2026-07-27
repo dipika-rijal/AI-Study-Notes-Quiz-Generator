@@ -85,7 +85,7 @@ const planSchema = new mongoose.Schema(
 );
 
 // Auto-compute progress before save
-planSchema.pre("save", function (next) {
+planSchema.pre("save", function () {
   let total = 0;
   let done = 0;
   (this.dailyTasks || []).forEach((day) => {
@@ -102,7 +102,6 @@ planSchema.pre("save", function (next) {
   this.totalTasks = total;
   this.completedTasks = done;
   this.progress = total > 0 ? Math.round((done / total) * 100) : 0;
-  next();
 });
 
 module.exports = mongoose.model("Plan", planSchema);
