@@ -6,12 +6,14 @@ router.use(requireAuth);
 
 const {
   getQuizAttempts,
+  getQuizAttemptById,
   createQuizAttempt,
   updateQuizAttempt,
   deleteQuizAttempt
 } = require("../controllers/quizAttemptController.js");
 
 router.get("/", getQuizAttempts);
+router.get("/:id", getQuizAttemptById);
 router.post("/", createQuizAttempt);
 router.put("/:id", updateQuizAttempt);
 router.delete("/:id", deleteQuizAttempt);

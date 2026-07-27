@@ -16,7 +16,7 @@ const {
 router.get("/", getNotes);
 router.get("/:id", getNoteById);
 router.post("/", validateNote, createNote);
-router.put("/:id", updateNote);
+router.put("/:id", validateNote, updateNote);
 router.delete("/:id", deleteNote);
 
 module.exports = router;

@@ -10,6 +10,8 @@ const messageSchema = new mongoose.Schema(
     category: { type: String, default: "" },
     options: { type: mongoose.Schema.Types.Mixed, default: null },
     data: { type: mongoose.Schema.Types.Mixed, default: null },
+    quizState: { type: mongoose.Schema.Types.Mixed, default: null },
+    quizResult: { type: mongoose.Schema.Types.Mixed, default: null },
     status: { type: String, default: "success" },
     saved: { type: Boolean, default: false },
     timestamp: { type: Date, default: Date.now }

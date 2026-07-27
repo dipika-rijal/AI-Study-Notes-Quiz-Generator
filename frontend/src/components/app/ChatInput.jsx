@@ -24,7 +24,6 @@ export default function ChatInput({
   const [inputValue, setInputValue] = useState("");
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
-  const imageInputRef = useRef(null);
   const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
 
   // Auto-grow textarea height on value change
@@ -66,21 +65,23 @@ export default function ChatInput({
     const fileName = file.name;
     const fileSize = file.size;
     const cleanName = fileName.toLowerCase();
+    const isPdf = cleanName.endsWith(".pdf");
+    const isReadableTextFile = [".txt", ".md", ".csv", ".json", ".html", ".htm"].some((extension) => cleanName.endsWith(extension));
 
-    // Check size limit: 2MB
-    if (fileSize > 2 * 1024 * 1024) {
-      setErrorMessage("File is too large. Please upload files under 2MB.");
+    // Check size limit: 10MB
+    if (fileSize > 10 * 1024 * 1024) {
+      setErrorMessage("File is too large. Please upload files under 10MB.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    if (file.type.startsWith("image/")) {
-      setErrorMessage("Please use the Upload Image option for images.");
+    if (!isPdf && !isReadableTextFile) {
+      setErrorMessage("Unsupported file type. Upload a PDF, TXT, Markdown, CSV, JSON, or HTML file.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    if (cleanName.endsWith(".pdf")) {
+    if (isPdf) {
       setLoadingState("extracting");
       try {
         const text = await pdfToText(file);
@@ -133,12 +134,6 @@ export default function ChatInput({
   const handleAttachmentSelect = (action) => {
     setIsAttachmentMenuOpen(false);
     if (action === 'file') fileInputRef.current?.click();
-    if (action === 'image') imageInputRef.current?.click();
-  };
-
-  const handleImageChange = (e) => {
-    if (e.target.files?.[0]) setErrorMessage('Image analysis is not enabled by the current AI API. Please add a note or upload a PDF.');
-    e.target.value = '';
   };
 
   return (
@@ -148,11 +143,11 @@ export default function ChatInput({
         <input
           ref={fileInputRef}
           type="file"
+          accept=".pdf,.txt,.md,.csv,.json,.html,.htm,application/pdf,text/plain,text/markdown,text/csv,application/json,text/html"
           onChange={handleFileChange}
           className="hidden"
           disabled={disabled || isInputLoading}
         />
-        <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" disabled={disabled || isInputLoading} />
         {isAttachmentMenuOpen && <AttachmentMenu onSelect={handleAttachmentSelect} disabled={disabled || isInputLoading} />}
 
         {/* Attachment Button */}

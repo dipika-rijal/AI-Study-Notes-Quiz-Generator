@@ -27,7 +27,8 @@ function normalizeApiQuiz(result) {
   return {
     quizId: result.quizId || "",
     questions: questions.map((item, index) => ({
-      id: `${result.quizId || "quiz"}-${index}`,
+      id: item.id || `${result.quizId || "quiz"}-${index}`,
+      sourceId: item.id ? String(item.id) : undefined,
       question: item.question || `Question ${index + 1}`,
       options: Array.isArray(item.options) ? item.options.slice(0, 4) : [],
       correctAnswer: item.correctAnswer || "A",
@@ -45,6 +46,7 @@ function normalizeSavedQuiz(savedQuiz) {
 
       return {
         id: `${savedQuiz._id}-${index}`,
+        sourceId: String(question._id),
         question: question.question || question.questionText,
         options: question.options.map((option) => option.text),
         correctAnswer: question.correctAnswer || correctLetter,
@@ -175,7 +177,7 @@ export default function CreateQuiz() {
     return response.data.note;
   }
 
-  const loadSavedQuiz = useCallback(async (savedQuizId) => {
+  const loadSavedQuiz = useCallback(async (savedQuizId, resumeAttemptId = null) => {
     setIsGenerating(true);
     setErrorMessage("");
 
@@ -187,12 +189,34 @@ export default function CreateQuiz() {
       setSourceType(savedQuiz.sourceType || "notes");
       setDifficulty(savedQuiz.difficulty || "medium");
       setQuestionCount(savedQuiz.questions?.length || 5);
-      setQuiz(normalizeSavedQuiz(savedQuiz));
-      setCurrentQuestionIndex(0);
-      setAnswers({});
+      const normalizedQuiz = normalizeSavedQuiz(savedQuiz);
+      let restoredAnswers = {};
+
+      if (resumeAttemptId) {
+        const attemptResponse = await api.get(`/quiz-attempts/${resumeAttemptId}`);
+        const attempt = attemptResponse.data.attempt;
+        const selections = new Map((attempt.selectedAnswers || []).map((answer) => [String(answer.questionId), answer.selectedOptionIndex]));
+        const feedback = new Map((attempt.feedback || []).map((item) => [String(item.questionId), item]));
+
+        normalizedQuiz.questions.forEach((question, index) => {
+          const selectedOptionIndex = selections.get(question.sourceId);
+          if (selectedOptionIndex === undefined) return;
+          const item = feedback.get(question.sourceId);
+          restoredAnswers[index] = {
+            selectedAnswer: OPTION_LETTERS[selectedOptionIndex],
+            correctAnswer: OPTION_LETTERS[item?.correctOptionIndex ?? OPTION_LETTERS.indexOf(question.correctAnswer)],
+            correct: item?.isCorrect ?? selectedOptionIndex === OPTION_LETTERS.indexOf(question.correctAnswer),
+            explanation: question.explanation
+          };
+        });
+      }
+
+      setQuiz(normalizedQuiz);
+      setAnswers(restoredAnswers);
+      setCurrentQuestionIndex(Math.min(Object.keys(restoredAnswers).length, Math.max(normalizedQuiz.questions.length - 1, 0)));
       setStep("quiz");
       setMessages([
-        createMessage("assistant", `Loaded saved quiz: ${savedQuiz.topic || "Saved Quiz"}`)
+        createMessage("assistant", resumeAttemptId ? `Resumed quiz: ${savedQuiz.topic || "Saved Quiz"}` : `Loaded saved quiz: ${savedQuiz.topic || "Saved Quiz"}`)
       ]);
     } catch (error) {
       console.error(error);
@@ -205,8 +229,9 @@ export default function CreateQuiz() {
   useEffect(() => {
     const savedQuizId = searchParams.get("savedQuizId");
     if (savedQuizId) {
+      const resumeAttemptId = searchParams.get("resumeAttemptId");
       const timeoutId = window.setTimeout(() => {
-        loadSavedQuiz(savedQuizId);
+        loadSavedQuiz(savedQuizId, resumeAttemptId);
       }, 0);
 
       return () => window.clearTimeout(timeoutId);
@@ -332,7 +357,7 @@ export default function CreateQuiz() {
     appendMessage(createMessage("assistant", "Generating your quiz..."));
 
     try {
-      const response = await api.post("/quiz/generate", {
+      const response = await api.post("/quizzes/generate", {
         topic,
         sourceType,
         content,
@@ -366,7 +391,7 @@ export default function CreateQuiz() {
     setIsChecking(true);
 
     try {
-      const response = await api.post("/quiz/check-answer", {
+      const response = await api.post("/quizzes/check-answer", {
         quizId: quiz.quizId,
         questionIndex: currentQuestionIndex,
         selectedAnswer
@@ -413,7 +438,7 @@ export default function CreateQuiz() {
 
     try {
       const selectedAnswers = Object.entries(answers).map(([index, ans]) => ({
-        questionId: quiz.questions[index].id,
+        questionId: quiz.questions[index].sourceId || quiz.questions[index].id,
         selectedOptionIndex: OPTION_LETTERS.indexOf(ans.selectedAnswer)
       }));
 
@@ -574,7 +599,7 @@ export default function CreateQuiz() {
             </div>
           )}
 
-          {step === "quiz" && currentQuestion && (
+          {(step === "quiz" || step === "completed") && currentQuestion && (
             <section className="rounded-3xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] p-5 shadow-sm shadow-orange-50 dark:shadow-none">
               <div className="mb-4 flex flex-col gap-3 border-b border-orange-50 dark:border-[#424242] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -675,7 +700,8 @@ export default function CreateQuiz() {
                     )}
                   </div>
 
-                  <div className="mt-5 flex justify-between">
+                  {step === "quiz" && (
+                    <div className="mt-5 flex justify-between">
                     {currentQuestionIndex > 0 ? (
                       <button
                         type="button"
@@ -701,7 +727,8 @@ export default function CreateQuiz() {
                         {currentQuestionIndex < totalQuestions - 1 ? "Next Question" : "Finish Quiz"}
                       </button>
                     </div>
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>

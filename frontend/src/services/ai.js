@@ -214,8 +214,12 @@ export async function* streamAIChatResponse(messages) {
   };
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  await auth.authStateReady();
   const user = auth.currentUser;
-  const token = user ? await user.getIdToken() : "";
+  if (!user) {
+    throw new Error("Please sign in before using the AI study assistant.");
+  }
+  const token = await user.getIdToken();
 
   const response = await fetch(`${API_URL}/ai/chat/stream`, {
     method: "POST",

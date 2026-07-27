@@ -27,7 +27,8 @@ export default function ChatMessage({
   onSaveNote,
   onRegenerate,
   isGenerating,
-  onUpdateMessage
+  onUpdateMessage,
+  onQuizSubmitted
 }) {
   const { role, content, type, options, data, title, category, saved, dbNoteId } = message;
   const isUser = role === "user";
@@ -79,7 +80,8 @@ export default function ChatMessage({
               initialAnswers={message.quizState || {}}
               onAnswerUpdate={(quizState) => {
                 if (onUpdateMessage) onUpdateMessage(message.id, { quizState });
-              }} 
+              }}
+              onQuizSubmitted={(result) => onQuizSubmitted?.(message.id, result)}
             />
           </Suspense>
         ) : type === "flashcards" ? (

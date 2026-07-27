@@ -1,6 +1,7 @@
 const Quiz = require("../models/Quiz.js");
 const QuizAttempt = require("../models/QuizAttempt.js");
 const UserPreference = require("../models/UserPreference.js");
+const extractJson = require("../utils/extractJson.js");
 
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
 const OPTION_LETTERS = ["A", "B", "C", "D"];
@@ -19,23 +20,11 @@ function parseJsonFromText(text) {
     throw new Error("AI returned an empty quiz response.");
   }
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    const objectStart = text.indexOf("{");
-    const arrayStart = text.indexOf("[");
-    const starts = [objectStart, arrayStart].filter(function (index) {
-      return index >= 0;
-    });
-    const start = starts.length ? Math.min.apply(null, starts) : -1;
-    const end = Math.max(text.lastIndexOf("}"), text.lastIndexOf("]"));
-
-    if (start < 0 || end <= start) {
-      throw new Error("Failed to parse AI quiz response.");
-    }
-
-    return JSON.parse(text.slice(start, end + 1));
+  const parsed = extractJson(text);
+  if (!parsed || (!parsed.questions && !Array.isArray(parsed))) {
+    throw new Error("Invalid format received from AI.");
   }
+  return parsed;
 }
 
 function normalizeSourceType(value) {
@@ -105,8 +94,8 @@ function normalizeGeneratedQuestions(rawQuestions, requestedCount) {
       if (!correctAnswer) correctAnswer = "A";
 
       const explanationCorrect = String(
-        item.explanation_correct || 
-        (item.explanation && item.explanation.correct) || 
+        item.explanation_correct ||
+        (item.explanation && item.explanation.correct) ||
         "This option best matches the provided quiz source."
       ).trim();
 
@@ -146,7 +135,6 @@ function toQuizModelQuestions(questions) {
   return questions.map(function (question) {
     return {
       question: question.question,
-      questionText: question.question,
       correctAnswer: question.correctAnswer,
       explanation: question.explanation,
       options: question.options.map(function (optionText, index) {
@@ -166,6 +154,8 @@ function toQuizModelQuestions(questions) {
   });
 }
 
+// Full question shape — includes correctAnswer and explanation.
+// Used only AFTER the student has answered (checkAnswer endpoint).
 function toApiQuestion(question) {
   const correctIndex = question.options.findIndex(function (option) {
     return option.isCorrect;
@@ -173,6 +163,7 @@ function toApiQuestion(question) {
   const correctLetter = OPTION_LETTERS[correctIndex >= 0 ? correctIndex : 0];
 
   return {
+    id: String(question._id),
     question: question.question || question.questionText,
     options: question.options.map(function (option) {
       return option.text;
@@ -192,6 +183,18 @@ function toApiQuestion(question) {
         D: question.explanation?.wrong?.D || question.options[3]?.explanation || ""
       }
     }
+  };
+}
+
+// Safe variant for initial quiz load — omits the answer key so it cannot be
+// read from the Network tab before the student has answered.
+function toApiQuestionSafe(question) {
+  return {
+    id: String(question._id),
+    question: question.question || question.questionText,
+    options: question.options.map(function (option) {
+      return option.text;
+    })
   };
 }
 
@@ -353,28 +356,42 @@ async function callGroqForQuiz(messages) {
     throw new Error("Groq API key is missing on the backend.");
   }
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + apiKey,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      temperature: 0.35,
-      response_format: { type: "json_object" },
-      messages: messages
-    })
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-  const body = await response.text();
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + apiKey,
+        "Content-Type": "application/json"
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.35,
+        response_format: { type: "json_object" },
+        messages: messages
+      })
+    });
 
-  if (!response.ok) {
-    throw new Error("Groq API returned " + response.status + ". " + body.slice(0, 300));
+    clearTimeout(timeoutId);
+
+    const body = await response.text();
+
+    if (!response.ok) {
+      throw new Error("Groq API returned " + response.status + ". " + body.slice(0, 300));
+    }
+
+    const data = JSON.parse(body);
+    return data.choices?.[0]?.message?.content || "";
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error("AI request timed out. Please try again.");
+    }
+    throw error;
   }
-
-  const data = JSON.parse(body);
-  return data.choices?.[0]?.message?.content || "";
 }
 
 async function getQuizzes(req, res, next) {
@@ -398,9 +415,9 @@ async function getQuizById(req, res, next) {
   } catch (error) {
     console.error("Error in getQuizById:", error);
     if (error.name === "CastError") {
-      return res.status(500).json({ 
-        success: false, 
-        message: "This quiz could not be loaded — it may be an older format." 
+      return res.status(500).json({
+        success: false,
+        message: "This quiz could not be loaded — it may be an older format."
       });
     }
     next(error);
@@ -426,7 +443,7 @@ async function generateWithRetry(prompt) {
         parsed.questions,
         prompt.numberOfQuestions
       );
-      
+
       for (const q of generatedQuestions) {
         if (!q.correctAnswer || !OPTION_LETTERS.includes(q.correctAnswer)) {
           throw new Error("Invalid correct_answer format");
@@ -458,10 +475,12 @@ async function generateQuiz(req, res, next) {
       questions: toQuizModelQuestions(generatedQuestions)
     });
 
+    // Bug fix: use toApiQuestionSafe — omits correctAnswer and explanation
+    // so the answer key is not readable from the Network tab before answering.
     res.status(201).json({
       success: true,
       quizId: String(quiz._id),
-      questions: quiz.questions.map(toApiQuestion)
+      questions: quiz.questions.map(toApiQuestionSafe)
     });
   } catch (error) {
     next(error);
@@ -484,13 +503,15 @@ async function retryQuiz(req, res, next) {
       questions: toQuizModelQuestions(generatedQuestions)
     });
 
+    // Bug fix: use toApiQuestionSafe — omits correctAnswer and explanation
+    // so the answer key is not readable from the Network tab before answering.
     res.status(201).json({
       success: true,
       quizId: String(quiz._id),
       topic: quiz.topic,
       difficulty: quiz.difficulty,
       sourceType: quiz.sourceType,
-      questions: quiz.questions.map(toApiQuestion)
+      questions: quiz.questions.map(toApiQuestionSafe)
     });
   } catch (error) {
     next(error);
@@ -533,7 +554,9 @@ async function checkAnswer(req, res, next) {
 
 async function updateQuiz(req, res, next) {
   try {
-    const { missedConcepts, ...updateData } = req.body;
+    // Bug fix: strip userId alongside missedConcepts so a client cannot
+    // silently reassign quiz ownership via a PUT body containing userId.
+    const { missedConcepts, userId: _userId, ...updateData } = req.body;
 
     const quiz = await Quiz.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.uid },
@@ -550,7 +573,7 @@ async function updateQuiz(req, res, next) {
       if (prefs) {
         const currentWeaknesses = prefs.learningProfile?.weaknesses || [];
         const newWeaknesses = [...new Set([...currentWeaknesses, ...missedConcepts])].slice(-10); // Keep last 10
-        
+
         await UserPreference.findOneAndUpdate(
           { userId: req.user.uid },
           { $set: { "learningProfile.weaknesses": newWeaknesses } }

@@ -1,5 +1,6 @@
 const Plan = require("../models/Plan");
 const UserPreference = require("../models/UserPreference");
+const extractJson = require("../utils/extractJson");
 const axios = require("axios");
 
 /* ──────────────────────────────────────────────
@@ -173,16 +174,7 @@ Please create a personalized study plan.`;
 
     let parsed;
     try {
-      let cleaned = aiResponse;
-      const objectStart = cleaned.indexOf("{");
-      const arrayStart = cleaned.indexOf("[");
-      const starts = [objectStart, arrayStart].filter(index => index >= 0);
-      const start = starts.length ? Math.min(...starts) : -1;
-      const end = Math.max(cleaned.lastIndexOf("}"), cleaned.lastIndexOf("]"));
-      if (start >= 0 && end > start) {
-        cleaned = cleaned.slice(start, end + 1);
-      }
-      parsed = JSON.parse(cleaned);
+      parsed = extractJson(aiResponse);
     } catch {
       return res
         .status(500)

@@ -13,6 +13,23 @@ async function getQuizAttempts(req, res, next) {
   }
 }
 
+async function getQuizAttemptById(req, res, next) {
+  try {
+    const attempt = await QuizAttempt.findOne({
+      _id: req.params.id,
+      userId: req.user.uid
+    }).lean();
+
+    if (!attempt) {
+      return res.status(404).json({ success: false, message: "Quiz attempt not found" });
+    }
+
+    res.json({ success: true, attempt: attempt });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function createQuizAttempt(req, res, next) {
   try {
     const quizId = req.body.quizId;
@@ -25,7 +42,7 @@ async function createQuizAttempt(req, res, next) {
       });
     }
 
-    const quiz = await Quiz.findById(quizId);
+    const quiz = await Quiz.findOne({ _id: quizId, userId: req.user.uid });
 
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
@@ -60,7 +77,7 @@ async function createQuizAttempt(req, res, next) {
 
       return {
         questionId: question._id,
-        questionText: question.questionText,
+        questionText: question.question || question.questionText,
         options: question.options,
 
         selectedOptionIndex: selectedOptionIndex,
@@ -178,7 +195,7 @@ async function updateQuizAttempt(req, res, next) {
 
       return {
         questionId: question._id,
-        questionText: question.questionText,
+        questionText: question.question || question.questionText,
         options: question.options,
 
         selectedOptionIndex: selectedOptionIndex,
@@ -237,6 +254,7 @@ async function deleteQuizAttempt(req, res, next) {
 
 module.exports = {
   getQuizAttempts,
+  getQuizAttemptById,
   createQuizAttempt,
   updateQuizAttempt,
   deleteQuizAttempt

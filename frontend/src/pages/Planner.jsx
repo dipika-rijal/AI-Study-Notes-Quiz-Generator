@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
@@ -503,20 +503,9 @@ function PlanDetail({ plan: initialPlan, onDelete, onBack }) {
         progress: result.progress,
         completedTasks: result.completedTasks,
         totalTasks: result.totalTasks,
-        dailyTasks: newDailyTasks
+      dailyTasks: newDailyTasks
       };
     });
-  }
-
-  // Update local task state after toggle (refetch full plan)
-  async function handleTaskToggle(dayIndex, blockIndex, taskIndex, completed) {
-    try {
-      await updatePlanProgress(plan._id, { dayIndex, blockIndex, taskIndex, completed });
-      const fresh = await getPlanById(plan._id);
-      setPlan(fresh.plan);
-    } catch (err) {
-      console.error(err);
-    }
   }
 
   async function handleDelete() {
@@ -530,9 +519,11 @@ function PlanDetail({ plan: initialPlan, onDelete, onBack }) {
     }
   }
 
-  const daysUntilExam = plan.examDate
-    ? Math.max(0, Math.ceil((new Date(plan.examDate) - Date.now()) / 86400000))
-    : null;
+  const daysUntilExam = useMemo(() => {
+    return plan.examDate
+      ? Math.max(0, Math.ceil((new Date(plan.examDate) - Date.now()) / 86400000))
+      : null;
+  }, [plan.examDate]);
 
   return (
     <motion.div
@@ -686,8 +677,10 @@ function PlansList({ plans, onSelect, onNew }) {
   return (
     <div className="space-y-3">
       {plans.map((plan, i) => {
-        const daysLeft = plan.examDate
-          ? Math.max(0, Math.ceil((new Date(plan.examDate) - Date.now()) / 86400000))
+        const examDate = plan.examDate ? new Date(plan.examDate) : null;
+        const now = Date.now();
+        const daysLeft = examDate
+          ? Math.max(0, Math.ceil((examDate - now) / 86400000))
           : null;
         return (
           <motion.button

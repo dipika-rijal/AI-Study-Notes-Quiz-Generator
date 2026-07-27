@@ -98,6 +98,7 @@ export default function ChatPage() {
               onRegenerate={actions.regenerateResponse}
               isGenerating={isGenerating}
               onUpdateMessage={actions.updateMessageData}
+              onQuizSubmitted={actions.recordQuizCompletion}
             />
           ))}
 

@@ -4,6 +4,7 @@ const QuizAttempt = require("../models/QuizAttempt.js");
 const Conversation = require("../models/Conversation.js");
 
 async function getHistory(req, res, next) {
+  try {
   const filter = req.query.type || "all";
 
   const [notes, quizzes, attempts, conversations] = await Promise.all([
@@ -64,7 +65,16 @@ async function getHistory(req, res, next) {
     let preview = conv.topic || "Conversation";
     if (conv.messages && conv.messages.length > 0) {
       const lastMsg = conv.messages[conv.messages.length - 1];
-      if (lastMsg.type === "text") {
+      const lastQuiz = [...conv.messages].reverse().find(function (message) {
+        return message.type === "quiz" && message.quizState && message.quizState.submitted;
+      });
+      const quizResult = lastMsg.quizResult || (lastMsg.type === "quiz" ? lastMsg.quizState : lastQuiz?.quizState);
+
+      if (quizResult && quizResult.score !== undefined && quizResult.totalQuestions !== undefined) {
+        const quizMessage = lastMsg.type === "quiz" ? lastMsg : lastQuiz;
+        const topic = quizResult.topic || quizMessage?.data?.topic || quizMessage?.topic || conv.topic || "Study quiz";
+        preview = "Quiz: " + topic + " — " + quizResult.score + "/" + quizResult.totalQuestions;
+      } else if (lastMsg.type === "text") {
         preview = lastMsg.content.substring(0, 100) + (lastMsg.content.length > 100 ? "..." : "");
       } else if (lastMsg.type === "quiz") {
         preview = "Quiz generated.";
@@ -117,9 +127,13 @@ async function getHistory(req, res, next) {
     },
     items: items
   });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function getRecentActivity(req, res, next) {
+  try {
   const limit = Number(req.query.limit) || 5;
 
   const notes = await Note.find({ userId: req.user.uid }).sort({ updatedAt: -1 }).limit(limit).lean();
@@ -174,6 +188,9 @@ async function getRecentActivity(req, res, next) {
     success: true,
     items: items.slice(0, limit)
   });
+  } catch (error) {
+    next(error);
+  }
 }
 
 module.exports = {
