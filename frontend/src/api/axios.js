@@ -8,18 +8,17 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Attach Firebase ID token to every request.
-// Uses forceRefresh=false so it returns the cached token instantly — avoiding
-// a race condition on first load where the token isn't ready yet.
+// Attach Firebase ID token to every outgoing request
 api.interceptors.request.use(async (config) => {
-  const user = auth.currentUser;
-  if (user) {
-    try {
-      const token = await user.getIdToken(false);
+  try {
+    const user = auth.currentUser;
+    if (user) {
+      const token = await user.getIdToken();
       config.headers.Authorization = `Bearer ${token}`;
-    } catch (e) {
-      console.warn("Could not get Firebase ID token:", e.message);
     }
+  } catch (err) {
+    // Token fetch failed — let the request go without auth;
+    // backend will return 401 and the app handles it gracefully.
   }
   return config;
 });
@@ -32,4 +31,4 @@ api.interceptors.response.use(
   (err) => Promise.reject(err)
 );
 
-export default api;
+export default api;

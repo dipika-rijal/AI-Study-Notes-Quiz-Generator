@@ -167,10 +167,18 @@ ${profileContext ? "Student Profile: " + profileContext : ""}
 
 Please create a personalized study plan.`;
 
-    const aiResponse = await callGroqAI([
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt }
-    ]);
+    let aiResponse;
+    try {
+      aiResponse = await callGroqAI([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ]);
+    } catch (aiErr) {
+      if (aiErr.message === "Missing Groq API Key.") {
+        return res.status(500).json({ success: false, message: "Server configuration error: Missing AI API key." });
+      }
+      return res.status(502).json({ success: false, message: "Failed to connect to AI provider." });
+    }
 
     let parsed;
     try {

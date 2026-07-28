@@ -77,10 +77,12 @@ export default function MarkdownRenderer({ content }) {
           ),
           li: ({ children }) => <li className="leading-7">{children}</li>,
           strong: ({ children }) => <strong className="font-extrabold text-[#15132b] dark:text-[#ececec]">{children}</strong>,
-          code: ({ inline, className, children, ...props }) => {
+          code: ({ className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || "");
+            const codeString = String(children);
+            const isBlock = Boolean(match) || codeString.includes("\n");
 
-            if (!inline && match) {
+            if (isBlock && match) {
               return (
                 <div className="my-4 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-100 font-mono shadow-lg">
                   <pre className="overflow-x-auto p-4 text-sm leading-6">
@@ -92,7 +94,7 @@ export default function MarkdownRenderer({ content }) {
               );
             }
 
-            if (!inline) {
+            if (isBlock) {
               return (
                 <div className="my-4 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-100 font-mono shadow-lg">
                   <pre className="overflow-x-auto p-4 text-sm leading-6">

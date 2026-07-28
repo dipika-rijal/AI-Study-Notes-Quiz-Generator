@@ -1,5 +1,6 @@
 ﻿const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const validateEnv = require("./config/validateEnv");
@@ -9,6 +10,7 @@ const helmet = require("helmet");
 const connectDB = require("./config/db.js");
 const { generalLimiter } = require("./middleware/rateLimit");
 
+const authRoutes = require("./routes/authRoutes.js");
 const noteRoutes = require("./routes/noteRoutes.js");
 const quizRoutes = require("./routes/quizRoutes.js");
 const quizAttemptRoutes = require("./routes/quizAttemptRoutes.js");
@@ -32,10 +34,7 @@ app.use((req, res, next) => {
   res.send = function (body) {
     console.log(`[RES] ${req.method} ${req.url} -> ${res.statusCode}`);
 
-    if (
-      res.statusCode >= 400 &&
-      process.env.NODE_ENV === "development"
-    ) {
+    if (res.statusCode >= 400 && process.env.NODE_ENV === "development") {
       console.log("[RES BODY]", body);
     }
 
@@ -66,6 +65,7 @@ app.use(
   })
 );
 
+app.use(cookieParser());
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
@@ -81,6 +81,7 @@ app.get("/api/health", (req, res) => {
 });
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 // Keep the former singular path during the client migration. This prevents
 // deployed or cached clients from receiving a 404 while new code uses

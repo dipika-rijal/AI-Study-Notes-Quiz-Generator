@@ -17,8 +17,6 @@ export default function Tutor() {
     loadingState,
     errorMessage,
     setErrorMessage,
-    tutorMode,
-    setTutorMode,
     actions
   } = useTutorFlow(conversationId);
 
@@ -34,12 +32,7 @@ export default function Tutor() {
 
   const isGenerating = loadingState === "generating";
 
-  const MODES = [
-    { value: "beginner", label: "Beginner" },
-    { value: "exam", label: "Exam Prep" },
-    { value: "deep", label: "Deep Learning" },
-    { value: "coding", label: "Coding Tutor" }
-  ];
+
 
   return (
     <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col bg-transparent">
@@ -59,26 +52,13 @@ export default function Tutor() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <select
-            value={tutorMode}
-            onChange={(e) => setTutorMode(e.target.value)}
-            className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-primary)] outline-none focus:border-[var(--color-primary-500)]"
-          >
-            {MODES.map((mode) => (
-              <option key={mode.value} value={mode.value}>
-                {mode.label} Mode
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={actions.resetChat}
-            className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
-          >
-            🗑 Clear
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={actions.resetChat}
+          className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+        >
+          🗑 Clear
+        </button>
       </header>
 
       {/* Main Conversation viewport */}

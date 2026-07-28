@@ -1,4 +1,4 @@
-const { initializeApp, getApps, getApp } = require("firebase-admin/app");
+const { initializeApp, getApps, cert } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { sendError } = require("../utils/apiResponse.js");
 
@@ -10,29 +10,28 @@ function initFirebaseAdmin() {
     return;
   }
 
-  const projectId =
-    process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
+  try {
+    // Local dev: reads from a JSON file. Production: reads from an env var (see below).
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : require("../config/serviceAccountKey.json");
 
-  if (!projectId) {
-    console.warn(
-      "⚠️  FIREBASE_PROJECT_ID is not set. Auth middleware will reject all requests."
-    );
-    return;
+    initializeApp({ credential: cert(serviceAccount) });
+    firebaseReady = true;
+    console.log("🔥 Firebase Admin initialised with service account");
+  } catch (err) {
+    console.warn("⚠️  Firebase service account not found/invalid:", err.message);
   }
-
-  initializeApp({ projectId });
-  firebaseReady = true;
-  console.log("🔥 Firebase Admin initialised (projectId:", projectId + ")");
 }
 
 initFirebaseAdmin();
 
+// Verifies the session cookie instead of a Bearer token now.
 async function requireAuth(req, res, next) {
   try {
-    const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    const sessionCookie = req.cookies?.session;
 
-    if (!token) {
+    if (!sessionCookie) {
       return sendError(res, "Authentication required", 401);
     }
 
@@ -40,22 +39,16 @@ async function requireAuth(req, res, next) {
       return sendError(res, "Auth service is not configured on the server", 503);
     }
 
-    // Revocation checks require Firebase service-account credentials. This app
-    // is configured with a project ID only, so standard signature/expiry
-    // verification keeps authenticated client requests working locally.
-    const decoded = await getAuth().verifyIdToken(token);
+    const decoded = await getAuth().verifySessionCookie(sessionCookie, true); // true = check revocation
 
     if (!decoded.uid || typeof decoded.uid !== "string") {
-      return sendError(res, "Invalid token payload", 401);
+      return sendError(res, "Invalid session", 401);
     }
 
-    req.user = {
-      uid: decoded.uid,
-      email: decoded.email || null
-    };
+    req.user = { uid: decoded.uid, email: decoded.email };
     next();
-  } catch (error) {
-    return sendError(res, "Invalid or expired authentication token", 401);
+  } catch (err) {
+    return sendError(res, "Invalid or expired session", 401);
   }
 }
 
