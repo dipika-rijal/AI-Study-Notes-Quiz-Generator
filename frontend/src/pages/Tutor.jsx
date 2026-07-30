@@ -28,7 +28,7 @@ export default function Tutor() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, loadingState]);
+  }, [messages.length, loadingState]);
 
   const isGenerating = loadingState === "generating";
 

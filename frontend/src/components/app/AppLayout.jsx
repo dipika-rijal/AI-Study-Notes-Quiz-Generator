@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import StreakWidget from './StreakWidget';
 import { pageMotion } from '../../lib/motion';
 
 export default function AppLayout({ user, logout }) {
@@ -15,7 +16,12 @@ export default function AppLayout({ user, logout }) {
         <Sidebar user={user} logout={logout} mobileOpen={isSidebarOpen} onMobileClose={() => setIsSidebarOpen(false)} />
         <main className="relative min-h-screen min-w-0 flex-1 overflow-y-auto px-5 pb-5 pt-20 sm:px-8 lg:px-10 lg:py-8">
           <button type="button" onClick={() => setIsSidebarOpen((isOpen) => !isOpen)} aria-label="Toggle sidebar" aria-expanded={isSidebarOpen} className="absolute left-5 top-5 grid h-11 w-11 place-items-center rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] shadow-sm transition hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] sm:left-8 lg:hidden"><Menu size={22} strokeWidth={2} /></button>
-          <div className="mx-auto h-full max-w-6xl">
+          
+          <div className="absolute right-5 top-5 sm:right-8 sm:top-8 z-10 lg:z-50">
+            <StreakWidget />
+          </div>
+
+          <div className="mx-auto h-full max-w-6xl mt-4 lg:mt-0">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

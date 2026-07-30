@@ -2,6 +2,34 @@ import React, { useState } from 'react';
 
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
+function getOptionText(question, letter) {
+  const index = OPTION_LETTERS.indexOf(letter);
+  if (index < 0) return "";
+  const option = question.options?.[index];
+  return typeof option === "string" ? option : option?.text || "";
+}
+
+function formatCorrectOption(question, answer) {
+  const letter =
+    answer?.correctOptionIndex !== undefined && answer?.correctOptionIndex !== null
+      ? OPTION_LETTERS[answer.correctOptionIndex]
+      : question.correctAnswer && OPTION_LETTERS.includes(question.correctAnswer)
+      ? question.correctAnswer
+      : null;
+
+  const text =
+    answer?.correctOptionText ||
+    (letter ? getOptionText(question, letter) : "") ||
+    (typeof question.correctAnswer === "string" &&
+    !OPTION_LETTERS.includes(question.correctAnswer)
+      ? question.correctAnswer
+      : "");
+
+  if (letter && text) return `${letter}. ${text}`;
+  if (letter) return letter;
+  return text || "Unknown";
+}
+
 function inferAreas(quizQuestions, answers) {
   const strong = [];
   const weak = [];
@@ -207,9 +235,9 @@ export default function QuizReview({ quiz, answers, score, totalQuestions, attem
                 })()}
               </div>
 
-              {!isCorrect && correctLetter && (
-                <p className="text-[11px] font-bold text-red-700 mt-2">
-                  Correct answer: {correctLetter}
+              {!isCorrect && (
+                <p className="text-[11px] font-bold text-red-700 dark:text-red-400 mt-2">
+                  Correct answer: {formatCorrectOption(question, answer)}
                 </p>
               )}
 
@@ -222,24 +250,38 @@ export default function QuizReview({ quiz, answers, score, totalQuestions, attem
                   {openedExplanations[index] ? "Hide Explanation" : "Explain Answer"}
                 </button>
 
-                {openedExplanations[index] && (
-                  <div className="mt-3 p-3 rounded-xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] text-[11px] leading-relaxed font-semibold text-[#15132b] dark:text-[#ececec] space-y-2">
-                    <p>
-                      <span className="font-black text-emerald-700 dark:text-emerald-400">Correct Answer:</span>{" "}
-                      {typeof question.explanation === 'object' 
-                        ? question.explanation.correct 
-                        : (question.explanation || (question.options?.find?.(o => o.isCorrect)?.explanation) || answer.correctOptionExplanation || "This is the correct answer.")}
-                    </p>
-                    {selectedLetter && selectedLetter !== correctLetter && (
+                {openedExplanations[index] && (() => {
+                  const explanationObj = (typeof question.explanation === "object" && question.explanation)
+                    || (typeof answer.explanation === "object" && answer.explanation)
+                    || null;
+
+                  const correctExplanation = answer.correctOptionExplanation
+                    || explanationObj?.correct
+                    || (question.options?.find?.((o) => o.isCorrect)?.explanation)
+                    || "This is the correct answer.";
+
+                  return (
+                    <div className="mt-3 p-3 rounded-xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] text-[11px] leading-relaxed font-semibold text-[#15132b] dark:text-[#ececec] space-y-2">
                       <p>
-                        <span className="font-black text-red-700 dark:text-red-400">Your Answer ({selectedLetter}):</span>{" "}
-                        {typeof question.explanation === 'object' && question.explanation.wrong
-                          ? question.explanation.wrong[selectedLetter]
-                          : (answer.selectedOptionExplanation || "This option is incorrect.")}
+                        <span className="font-black text-emerald-700 dark:text-emerald-400">Correct Answer:</span>{" "}
+                        {formatCorrectOption(question, answer)}
                       </p>
-                    )}
-                  </div>
-                )}
+                      <p className="text-[#15132b] dark:text-[#ececec]">{correctExplanation}</p>
+                      {explanationObj?.core_concept && (
+                        <p>
+                          <span className="font-black text-purple-700 dark:text-purple-400">Core Concept:</span>{" "}
+                          {explanationObj.core_concept}
+                        </p>
+                      )}
+                      {explanationObj?.memory_trick && (
+                        <p>
+                          <span className="font-black text-yellow-700 dark:text-yellow-400">Memory Trick:</span>{" "}
+                          {explanationObj.memory_trick}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );

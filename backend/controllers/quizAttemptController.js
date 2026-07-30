@@ -80,6 +80,9 @@ async function createQuizAttempt(req, res, next) {
         questionText: question.question || question.questionText,
         options: question.options,
 
+        // Include the full question-level explanation (correct, wrong, core_concept, memory_trick)
+        explanation: question.explanation || null,
+
         selectedOptionIndex: selectedOptionIndex,
         selectedOptionText: selectedOption ? selectedOption.text : "Not answered",
         selectedOptionExplanation: selectedOption
@@ -197,6 +200,9 @@ async function updateQuizAttempt(req, res, next) {
         questionId: question._id,
         questionText: question.question || question.questionText,
         options: question.options,
+
+        // Include the full question-level explanation (correct, wrong, core_concept, memory_trick)
+        explanation: question.explanation || null,
 
         selectedOptionIndex: selectedOptionIndex,
         selectedOptionText: selectedOption ? selectedOption.text : "Not answered",

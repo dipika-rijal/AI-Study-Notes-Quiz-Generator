@@ -34,7 +34,14 @@ app.use((req, res, next) => {
   res.send = function (body) {
     console.log(`[RES] ${req.method} ${req.url} -> ${res.statusCode}`);
 
+<<<<<<< HEAD
     if (res.statusCode >= 400 && process.env.NODE_ENV === "development") {
+=======
+    if (
+      res.statusCode >= 400 &&
+      process.env.FRONTEND_ENV 
+    ) {
+>>>>>>> origin/main
       console.log("[RES BODY]", body);
     }
 

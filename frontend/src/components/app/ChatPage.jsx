@@ -3,8 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { useConversationFlow } from "../../hooks/useConversationFlow";
 import ChatMessage from "./MessageBubble";
 import ChatInput from "./ChatInput";
-import { Sparkles } from 'lucide-react';
+import { Download, Sparkles } from 'lucide-react';
 import api from "../../api/axios";
+import { exportChatToPdf } from "../../utils/exportChatPdf";
 
 /**
  * Main Chat Container for the Conversational Note Assistant.
@@ -26,6 +27,7 @@ export default function ChatPage() {
 
   const {
     messages,
+    conversation,
     conversationStep,
     loadingState,
     errorMessage,
@@ -50,9 +52,10 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, loadingState]);
+  }, [messages.length, loadingState]);
 
   const isGenerating = conversationStep === "generating";
+  const hasConversationMessages = messages.some((message) => message.id !== "greeting");
 
   return (
     <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col bg-transparent">
@@ -73,14 +76,26 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={actions.resetChat}
-          aria-label="Start a new chat session"
-          className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
-        >
-          🗑 Start Over
-        </button>
+        <div className="flex items-center gap-2">
+          {hasConversationMessages && (
+            <button
+              type="button"
+              onClick={() => exportChatToPdf(conversation)}
+              aria-label="Download this chat as a PDF"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-[var(--color-primary-500)]/40 hover:text-[var(--color-primary-600)] active:scale-95"
+            >
+              <Download size={14} /> Download Chat
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={actions.resetChat}
+            aria-label="Start a new chat session"
+            className="rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-3 py-2 text-xs font-medium text-[var(--theme-text-secondary)] transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+          >
+            🗑 Start Over
+          </button>
+        </div>
       </header>
 
       {/* Main Conversation viewport */}

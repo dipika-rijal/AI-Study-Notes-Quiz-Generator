@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowUpRight, BrainCircuit, FileText, MessageSquareText, Plus, Upload } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUpRight, BrainCircuit, FileText, MessageSquareText, Plus, Upload, Calendar } from 'lucide-react';
 import ContinueCard from './ContinueCard';
 import HeroWelcome from './HeroWelcome';
 import { getHistory } from '../../api/historyApi';
-import { useStreak } from '../../hooks/useStreak';
 import { buttonTap, cardHover, revealItem, staggerContainer } from '../../lib/motion';
 
 const actions = [
   { label: 'Generate notes', description: 'Turn a topic or source into clear study notes.', icon: FileText, to: '/app/notes?type=topic' },
-  { label: 'Ask AI', description: 'Explore an idea, explain a concept, or plan your study.', icon: MessageSquareText, to: '/app/notes' },
-  { label: 'Upload material', description: 'Read a PDF, text file, or Markdown document.', icon: Upload, to: '/app/notes?type=upload' },
+  { label: 'Ask Tutor', description: 'Get personalized help, explanations, and guidance.', icon: MessageSquareText, to: '/app/tutor' },
+  { label: 'AI Planner', description: 'Plan your study schedule and stay on track.', icon: Calendar, to: '/app/planner' },
   { label: 'Create quiz', description: 'Build a focused practice set from any subject.', icon: BrainCircuit, to: '/app/quiz?type=topic' },
 ];
 
@@ -54,7 +53,7 @@ export default function Home({ user }) {
   const [recent, setRecent] = useState([]);
   const [activeAttempt, setActiveAttempt] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { streak } = useStreak();
+  const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -77,12 +76,31 @@ export default function Home({ user }) {
     return () => { isMounted = false; };
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowWelcome(false);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const completed = activeAttempt?.results?.filter((item) => item.selectedOptionIndex !== null && item.selectedOptionIndex !== undefined).length || 0;
   const total = activeAttempt?.questionCount || 0;
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="mx-auto max-w-5xl space-y-9 pb-12">
-      <HeroWelcome user={user} streak={streak?.streak || 0} />
+      <AnimatePresence>
+        {showWelcome && (
+          <motion.div
+            initial={{ opacity: 1, height: 'auto', marginBottom: 36 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.8, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <HeroWelcome user={user} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.header variants={revealItem} className="flex flex-wrap items-end justify-between gap-4 pt-1">
         <div>
           <p className="text-sm font-medium text-[var(--theme-text-secondary)]">Your learning workspace</p>
