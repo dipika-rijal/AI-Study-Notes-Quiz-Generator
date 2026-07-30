@@ -76,12 +76,22 @@ export default function MarkdownRenderer({ content }) {
             </ol>
           ),
           li: ({ children }) => <li className="leading-7">{children}</li>,
+<<<<<<< HEAD
+          strong: ({ children }) => <strong className="font-extrabold text-[#15132b] dark:text-[#ececec]">{children}</strong>,
+          code: ({ className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || "");
+            const codeString = String(children);
+            const isBlock = Boolean(match) || codeString.includes("\n");
+
+            if (isBlock && match) {
+=======
           strong: ({ children }) => <strong className="font-bold text-[var(--theme-text-primary)] dark:text-white drop-shadow-sm">{children}</strong>,
           code: ({ className, children, node, ...props }) => {
             const match = /language-(\w+)/.exec(className || "");
             const isBlock = match || String(children).includes("\n");
 
             if (isBlock) {
+>>>>>>> origin/main
               return (
                 <div className="my-5 overflow-hidden rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] shadow-sm">
                   <pre className="overflow-x-auto p-4 text-sm leading-6 text-[var(--theme-text-primary)]">
@@ -93,6 +103,19 @@ export default function MarkdownRenderer({ content }) {
               );
             }
 
+<<<<<<< HEAD
+            if (isBlock) {
+              return (
+                <div className="my-4 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-100 font-mono shadow-lg">
+                  <pre className="overflow-x-auto p-4 text-sm leading-6">
+                    <code>{children}</code>
+                  </pre>
+                </div>
+              );
+            }
+
+=======
+>>>>>>> origin/main
             return (
               <code className="rounded-md bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] px-1.5 py-0.5 font-mono text-[13px] font-medium text-[var(--color-primary-600)] dark:text-[var(--color-primary-400)]" {...props}>
                 {children}

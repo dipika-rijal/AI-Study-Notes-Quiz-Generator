@@ -27,6 +27,7 @@ function formatRelativeTime(date) {
 
 function getItemLink(item) {
   if (item.type === 'note') return `/app/notes?savedNoteId=${item.id}`;
+  if (item.type === 'conversation') return `/app/notes?conversationId=${item.id}`;
   if (item.historyKind === 'saved-quiz') return `/app/quiz?savedQuizId=${item.id}`;
   if (item.historyKind === 'quiz-attempt' && item.quizId) {
     return item.status === 'in_progress'

@@ -62,7 +62,7 @@ export default function History() {
   const getLinkForItem = (item) => {
     if (item.type === "note") return "/app/notes?savedNoteId=" + item.id;
     if (item.historyKind === "saved-quiz") return "/app/quiz?savedQuizId=" + item.id;
-    if (item.type === "conversation") return "/app?conversationId=" + item.id;
+    if (item.type === "conversation") return "/app/notes?conversationId=" + item.id;
     return "#";
   };
 

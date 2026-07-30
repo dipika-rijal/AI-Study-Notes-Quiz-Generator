@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import api from "../../api/axios";import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../../config/firebase";
@@ -29,8 +29,13 @@ export default function AuthModal({ authMode, closeAuthModal }) {
   async function handleEmailAuth(event) {
     event.preventDefault(); setErrorMessage(""); setLoading(true);
     try {
-      if (isSignup) await createUserWithEmailAndPassword(auth, email, password);
-      else await signInWithEmailAndPassword(auth, email, password);
+      const credential = isSignup
+        ? await createUserWithEmailAndPassword(auth, email, password)
+        : await signInWithEmailAndPassword(auth, email, password);
+
+      const idToken = await credential.user.getIdToken();
+      await api.post("/auth/session-login", { idToken });
+
       closeAuthModal();
     } catch (error) { setErrorMessage(getFriendlyError(error)); }
     finally { setLoading(false); }
@@ -38,7 +43,14 @@ export default function AuthModal({ authMode, closeAuthModal }) {
 
   async function handleGoogleLogin() {
     setErrorMessage(""); setLoading(true);
-    try { await signInWithPopup(auth, googleProvider); closeAuthModal(); }
+    try {
+      const credential = await signInWithPopup(auth, googleProvider);
+
+      const idToken = await credential.user.getIdToken();
+      await api.post("/auth/session-login", { idToken });
+
+      closeAuthModal();
+    }
     catch (error) { setErrorMessage(getFriendlyError(error)); }
     finally { setLoading(false); }
   }
