@@ -111,7 +111,7 @@ export default function CreateQuiz() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, quiz, currentQuestionIndex, answers]);
+  }, [messages.length]);
 
   function appendMessage(message) {
     setMessages((previous) => [...previous, message]);

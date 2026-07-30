@@ -52,7 +52,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, loadingState]);
+  }, [messages.length, loadingState]);
 
   const isGenerating = conversationStep === "generating";
   const hasConversationMessages = messages.some((message) => message.id !== "greeting");

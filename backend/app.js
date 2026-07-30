@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 
     if (
       res.statusCode >= 400 &&
-      process.env.NODE_ENV === "development"
+      process.env.FRONTEND_ENV 
     ) {
       console.log("[RES BODY]", body);
     }

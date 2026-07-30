@@ -192,7 +192,8 @@ Generate notes about the given topic using this exact teaching structure (use Ma
 Rules:
 - Speak in a patient, encouraging, and clear tone.
 - Do not assume prior knowledge.
-- Do not use markdown code blocks unless showing actual code.
+- Do not use markdown code blocks unless showing actual multi-line code.
+- Keep short technical terms (like variables or keywords) inline within the sentence using single backticks.
 - Only wrap complete programming examples in triple backticks.
 - Explain concepts before examples.
 - Adjust depth based on the selected style:
@@ -697,16 +698,29 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
 
     try {
       const stream = streamAIChatResponse(promptHistory);
+      let lastUpdateTime = Date.now();
+
       for await (const chunk of stream) {
         if (!activeStreamRef.current) {
           // Stream cancelled
           break;
         }
         currentContent += chunk;
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === messageId ? { ...msg, content: currentContent } : msg))
-        );
+        
+        const now = Date.now();
+        // Throttle state updates to ~50ms or on paragraph boundaries to prevent lag during long notes
+        if (now - lastUpdateTime > 50 || chunk.includes('\n')) {
+          setMessages((prev) =>
+            prev.map((msg) => (msg.id === messageId ? { ...msg, content: currentContent } : msg))
+          );
+          lastUpdateTime = now;
+        }
       }
+      
+      // Ensure final state is set
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === messageId ? { ...msg, content: currentContent } : msg))
+      );
       setConversationStep("finished");
       if (showFollowUpActions) {
         appendMessage({
@@ -1148,10 +1162,12 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
           type: "text"
         });
       } else if (followUpAction === "quiz") {
-        await generateStructuredResponse([
-          { role: "system", content: `You are an assistant. Generate a quiz based on the notes in the previous context. Output ONLY structured JSON matching the quiz requirements. No intro/outro.${contextPrompt}` },
-          ...recentMessages
-        ], "quiz");
+        const sessionContent = getRelevantSessionContent(messages);
+        await generateBackendQuiz({
+          ...sessionContent,
+          numberOfQuestions: 5,
+          difficulty: "medium"
+        });
       } else if (followUpAction === "flashcards") {
         await generateStructuredResponse([
           { role: "system", content: `You are an assistant. Generate flashcards based on the notes in the previous context. ${FLASHCARD_FORMAT_INSTRUCTION}${contextPrompt}` },
@@ -1271,7 +1287,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         await streamAIResponse(promptHistory, "notes", { title: "Study Notes", category: "Notes" });
       }
     }
-  }, [conversationStep, currentTopic, uploadedFile, pastedContent, messages, appendMessage, generateStructuredResponse, streamAIResponse, startIntentFlow]);
+  }, [conversationStep, currentTopic, uploadedFile, pastedContent, messages, appendMessage, generateStructuredResponse, generateBackendQuiz, streamAIResponse, startIntentFlow]);
 
   /**
    * Handles a readable study document and initiates document flow.

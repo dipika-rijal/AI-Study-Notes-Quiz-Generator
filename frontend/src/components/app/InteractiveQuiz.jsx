@@ -198,22 +198,48 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
       const savedAttemptId = result.attempt?._id || null;
       setAttemptId(savedAttemptId);
       setIsSaved(true);
-      onQuizSubmitted?.({
-        score: localScore,
-        totalQuestions,
-        topic: data?.topic || "Study quiz",
-        quizState: {
-          selectedAnswers,
-          currentQuestionIndex,
-          submitted: true,
-          openedExplanations,
-          attemptId: savedAttemptId,
+
+      // Use server feedback (has real explanations from DB) instead of local placeholders
+      const serverFeedback = result.attempt?.feedback;
+      if (Array.isArray(serverFeedback) && serverFeedback.length) {
+        setFeedback(serverFeedback);
+        const serverScore = serverFeedback.filter((item) => item.isCorrect).length;
+        setScore(serverScore);
+
+        onQuizSubmitted?.({
+          score: serverScore,
+          totalQuestions,
+          topic: data?.topic || "Study quiz",
+          quizState: {
+            selectedAnswers,
+            currentQuestionIndex,
+            submitted: true,
+            openedExplanations,
+            attemptId: savedAttemptId,
+            score: serverScore,
+            feedback: serverFeedback,
+            isSaved: true,
+            totalQuestions
+          }
+        });
+      } else {
+        onQuizSubmitted?.({
           score: localScore,
-          feedback: localFeedback,
-          isSaved: true,
-          totalQuestions
-        }
-      });
+          totalQuestions,
+          topic: data?.topic || "Study quiz",
+          quizState: {
+            selectedAnswers,
+            currentQuestionIndex,
+            submitted: true,
+            openedExplanations,
+            attemptId: savedAttemptId,
+            score: localScore,
+            feedback: localFeedback,
+            isSaved: true,
+            totalQuestions
+          }
+        });
+      }
     } catch (error) {
       setSubmitError(error.message || "Failed to save attempt.");
       setIsSaved(false);
