@@ -6,11 +6,13 @@ router.use(requireAuth);
 
 const {
   getHistory,
-  getRecentActivity
+  getRecentActivity,
+  clearHistory
 } = require("../controllers/historyController.js");
 
 router.get("/", getHistory);
 router.get("/recent", getRecentActivity);
+router.delete("/", clearHistory);
 
 module.exports = router;
 

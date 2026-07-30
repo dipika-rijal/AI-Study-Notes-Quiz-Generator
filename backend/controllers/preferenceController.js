@@ -7,7 +7,11 @@ exports.getPreferences = async (req, res) => {
     let prefs = await UserPreference.findOne({ userId });
     
     if (!prefs) {
-      prefs = await UserPreference.create({ userId, theme: "dark", accent: "purple" });
+      prefs = await UserPreference.create({ userId, theme: "light", accent: "purple" });
+    } else if (!prefs.themeConfigured && prefs.theme !== "light") {
+      // Migrate the former dark default without overriding a theme chosen in Settings.
+      prefs.theme = "light";
+      await prefs.save();
     }
     
     return sendSuccess(res, {
@@ -28,7 +32,10 @@ exports.updatePreferences = async (req, res) => {
     const { theme, accent, learningProfile } = req.body;
     
     const updateData = {};
-    if (theme) updateData.theme = theme;
+    if (theme) {
+      updateData.theme = theme;
+      updateData.themeConfigured = true;
+    }
     if (accent) updateData.accent = accent;
     if (learningProfile) updateData.learningProfile = learningProfile;
 

@@ -193,8 +193,28 @@ async function getRecentActivity(req, res, next) {
   }
 }
 
+async function clearHistory(req, res, next) {
+  try {
+    const filter = { userId: req.user.uid };
+    const [notes, quizzes, attempts, conversations] = await Promise.all([
+      Note.deleteMany(filter),
+      Quiz.deleteMany(filter),
+      QuizAttempt.deleteMany(filter),
+      Conversation.deleteMany(filter)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      deleted: notes.deletedCount + quizzes.deletedCount + attempts.deletedCount + conversations.deletedCount
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getHistory,
-  getRecentActivity
+  getRecentActivity,
+  clearHistory
 };
 

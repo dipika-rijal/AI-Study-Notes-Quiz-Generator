@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./config/firebase";
 import { getStoredStudyFocus, saveProfile } from './services/profile';
@@ -54,6 +54,7 @@ function LandingPage({ setModalType, setAuthMode }) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
   const [modalType, setModalType] = useState(null);
   const [authMode, setAuthMode] = useState(null);
   const [user, setUser] = useState(null);
@@ -102,7 +103,7 @@ export default function App() {
         <Route
           path="/"
           element={
-            <GuestRoute user={user}>
+            <GuestRoute>
               <LandingThemeProvider>
                 <LandingPage
                   setModalType={setModalType}
@@ -126,7 +127,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Home user={workspaceUser} />} />
+          <Route index element={<Home key={workspaceUser?.uid || workspaceUser?.email || 'guest'} user={workspaceUser} />} />
           <Route path="notes" element={<CreateNotes />} />
           <Route path="quiz" element={<CreateQuiz />} />
           <Route path="tutor" element={<Tutor />} />
@@ -156,6 +157,7 @@ export default function App() {
         <AuthModal
           authMode={authMode}
           closeAuthModal={() => setAuthMode(null)}
+          onAuthenticated={() => navigate("/app", { replace: true })}
         />
       </LandingThemeProvider>
 
