@@ -41,22 +41,19 @@ export const useAppTheme = () => useContext(AppThemeContext);
 
 export const AppThemeProvider = ({ children, noStyles = false }) => {
   const containerRef = useRef(null);
-  const [theme, setThemeState] = useState('dark');
+  const [theme, setThemeState] = useState('light');
   const [accent, setAccentState] = useState('purple');
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // 1. Check system preference
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = systemPrefersDark ? 'dark' : 'light';
+    const initialTheme = 'light';
     
     // 2. Only fetch from API if user is authenticated
     const currentUser = auth.currentUser;
     if (!currentUser) {
       // No user logged in — use localStorage fallback, skip API call entirely
-      const savedTheme = localStorage.getItem('studygen-app-theme');
       const savedAccent = localStorage.getItem('studygen-app-accent');
-      setThemeState(savedTheme || initialTheme);
+      setThemeState(initialTheme);
       setAccentState(savedAccent || 'purple');
       setIsLoaded(true);
       return;
@@ -69,9 +66,8 @@ export const AppThemeProvider = ({ children, noStyles = false }) => {
       })
       .catch(() => {
         // Fallback to local storage if offline or error
-        const savedTheme = localStorage.getItem('studygen-app-theme');
         const savedAccent = localStorage.getItem('studygen-app-accent');
-        setThemeState(savedTheme || initialTheme);
+        setThemeState(initialTheme);
         setAccentState(savedAccent || 'purple');
       })
       .finally(() => {
@@ -112,7 +108,7 @@ export const AppThemeProvider = ({ children, noStyles = false }) => {
 
   // Prevent flash: show nothing until preferences loaded
   if (!isLoaded) {
-    return <div style={noStyles ? {} : { minHeight: '100vh', background: '#0a0a0c' }} />;
+    return <div style={noStyles ? {} : { minHeight: '100vh', background: '#fcfbf9' }} />;
   }
 
   return (

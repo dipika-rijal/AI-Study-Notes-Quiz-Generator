@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Trash2 } from "lucide-react";
 import api from "../api/axios";
 import StudySessionCard from "../components/app/StudySessionCard";
 import QuizReview from "../components/app/QuizReview";
@@ -14,6 +15,8 @@ export default function History() {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedAttemptId, setExpandedAttemptId] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -87,6 +90,59 @@ export default function History() {
     return "100%";
   };
 
+  function getDeleteEndpoint(item) {
+    if (item.type === "note") return `/notes/${item.id}`;
+    if (item.type === "conversation") return `/conversations/${item.id}`;
+    if (item.historyKind === "quiz-attempt") return `/quiz-attempts/${item.id}`;
+    return `/quizzes/${item.id}`;
+  }
+
+  function openClearConfirmation() {
+    setConfirmation({
+      type: "all",
+      title: "Clear all history?",
+      message: "This permanently removes your saved notes, quizzes, quiz attempts, and conversations.",
+      confirmLabel: "Clear history"
+    });
+  }
+
+  function openItemConfirmation(item) {
+    setConfirmation({
+      type: "item",
+      item,
+      title: `Remove ${getTypeLabel(item).toLowerCase()}?`,
+      message: `"${item.title || "Untitled session"}" will be permanently removed from your history.`,
+      confirmLabel: "Remove"
+    });
+  }
+
+  async function handleConfirmedDelete() {
+    if (!confirmation) return;
+    try {
+      setIsDeleting(true);
+      setError("");
+      if (confirmation.type === "all") {
+        await api.delete("/history");
+        setData({
+          success: true,
+          counts: { all: 0, notes: 0, quizzes: 0, conversations: 0 },
+          items: []
+        });
+      } else {
+        await api.delete(getDeleteEndpoint(confirmation.item));
+        await loadHistory(activeTab);
+      }
+      setExpandedAttemptId(null);
+      setSearchTerm("");
+      setConfirmation(null);
+    } catch (err) {
+      console.error(err);
+      setError("History could not be updated. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-12 pt-4 px-4 sm:px-0">
       {/* Header */}
@@ -97,9 +153,20 @@ export default function History() {
         >
           ← Back Home
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight text-[var(--theme-text-primary)]">
-          Learning Memory
-        </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-[var(--theme-text-primary)]">
+            Learning Memory
+          </h1>
+          <button
+            type="button"
+            onClick={openClearConfirmation}
+            disabled={counts.all === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 px-3.5 py-2 text-sm font-medium text-red-500 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            Clear history
+          </button>
+        </div>
         <p className="text-lg text-[var(--theme-text-secondary)]">
           Review your past study sessions and materials.
         </p>
@@ -222,6 +289,7 @@ export default function History() {
                       date={new Date(item.createdAt || item.updatedAt).toLocaleDateString()}
                       status={getStatus(item)}
                       link={item.historyKind === "quiz-attempt" ? "#" : getLinkForItem(item)}
+                      onRemove={() => openItemConfirmation(item)}
                     />
                   </div>
                 )}
@@ -230,6 +298,37 @@ export default function History() {
           </motion.div>
         )}
       </div>
+
+      <AnimatePresence>
+        {confirmation && (
+          <motion.div
+            className="fixed inset-0 z-[100] grid place-items-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !isDeleting && setConfirmation(null)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="history-confirmation-title"
+              className="w-full max-w-md rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-6 shadow-2xl"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-500/10 text-red-500"><Trash2 size={20} /></div>
+              <h2 id="history-confirmation-title" className="mt-4 text-lg font-semibold text-[var(--theme-text-primary)]">{confirmation.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--theme-text-secondary)]">{confirmation.message}</p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button type="button" onClick={() => setConfirmation(null)} disabled={isDeleting} className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--theme-text-secondary)] transition hover:bg-[var(--theme-bg-tertiary)] disabled:opacity-50">Cancel</button>
+                <button type="button" onClick={handleConfirmedDelete} disabled={isDeleting} className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60">{isDeleting ? "Removing…" : confirmation.confirmLabel}</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 
 export default function StudySessionCard({ 
   topic, 
@@ -7,7 +8,8 @@ export default function StudySessionCard({
   progress = '100%', 
   date = 'Today', 
   status = 'Completed', 
-  link = '#' 
+  link = '#',
+  onRemove
 }) {
   let statusColor = 'var(--theme-text-muted)';
   let statusDot = 'bg-gray-400';
@@ -47,12 +49,26 @@ export default function StudySessionCard({
         </div>
       </div>
 
-      <Link
-        to={link}
-        className="shrink-0 px-5 py-2 rounded-lg bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-sm font-medium text-[var(--theme-text-primary)] hover:bg-[var(--color-primary-500)] hover:text-white hover:border-[var(--color-primary-600)] transition-colors duration-300"
-      >
-        Continue
-      </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        {onRemove && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove();
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-2 text-sm font-medium text-red-500 transition hover:bg-red-500/10"
+          >
+            <Trash2 size={15} /> Remove
+          </button>
+        )}
+        <Link
+          to={link}
+          className="px-5 py-2 rounded-lg bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-sm font-medium text-[var(--theme-text-primary)] hover:bg-[var(--color-primary-500)] hover:text-white hover:border-[var(--color-primary-600)] transition-colors duration-300"
+        >
+          Continue
+        </Link>
+      </div>
     </motion.div>
   );
 }

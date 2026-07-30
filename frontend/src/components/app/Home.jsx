@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, BrainCircuit, FileText, MessageSquareText, Plus, Upload, Calendar } from 'lucide-react';
@@ -13,6 +13,10 @@ const actions = [
   { label: 'AI Planner', description: 'Plan your study schedule and stay on track.', icon: Calendar, to: '/app/planner' },
   { label: 'Create quiz', description: 'Build a focused practice set from any subject.', icon: BrainCircuit, to: '/app/quiz?type=topic' },
 ];
+
+// Home is remounted when a user returns from another section. Keep the latest
+// data for each user so the Continue learning card does not flash a loader.
+const homeCache = new Map();
 
 function formatRelativeTime(date) {
   const value = new Date(date).getTime();
@@ -50,10 +54,13 @@ function formatActivity(item) {
 }
 
 export default function Home({ user }) {
-  const [recent, setRecent] = useState([]);
-  const [activeAttempt, setActiveAttempt] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const homeCacheKey = user?.uid || user?.email || 'guest';
+  const cachedHome = homeCache.get(homeCacheKey);
+  const [recent, setRecent] = useState(() => cachedHome?.recent || []);
+  const [activeAttempt, setActiveAttempt] = useState(() => cachedHome?.activeAttempt || null);
+  const [isLoading, setIsLoading] = useState(() => !cachedHome);
+  const welcomeStorageKey = `studygen:welcome-shown:${user?.uid || user?.email || 'guest'}`;
+  const [showWelcome, setShowWelcome] = useState(() => !sessionStorage.getItem(welcomeStorageKey));
 
   useEffect(() => {
     let isMounted = true;
@@ -62,26 +69,31 @@ export default function Home({ user }) {
       if (!isMounted) return;
       const items = Array.isArray(data?.items) ? data.items : [];
       const active = items.find((item) => item.historyKind === 'quiz-attempt' && item.status === 'in_progress' && item.quizId);
-      setActiveAttempt(active || null);
-      setRecent(items.slice(0, 3).map(formatActivity));
+      const nextHomeData = {
+        activeAttempt: active || null,
+        recent: items.slice(0, 3).map(formatActivity),
+      };
+      homeCache.set(homeCacheKey, nextHomeData);
+      setActiveAttempt(nextHomeData.activeAttempt);
+      setRecent(nextHomeData.recent);
     }).catch(() => {
       if (isMounted) {
-        setRecent([]);
-        setActiveAttempt(null);
+        if (!homeCache.has(homeCacheKey)) {
+          setRecent([]);
+          setActiveAttempt(null);
+        }
       }
     }).finally(() => {
       if (isMounted) setIsLoading(false);
     });
 
     return () => { isMounted = false; };
-  }, []);
+  }, [homeCacheKey]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcome(false);
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, []);
+  const dismissWelcome = useCallback(() => {
+    sessionStorage.setItem(welcomeStorageKey, 'true');
+    setShowWelcome(false);
+  }, [welcomeStorageKey]);
 
   const completed = activeAttempt?.results?.filter((item) => item.selectedOptionIndex !== null && item.selectedOptionIndex !== undefined).length || 0;
   const total = activeAttempt?.questionCount || 0;
@@ -96,7 +108,7 @@ export default function Home({ user }) {
             transition={{ duration: 0.8, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <HeroWelcome user={user} />
+            <HeroWelcome user={user} onDismiss={dismissWelcome} />
           </motion.div>
         )}
       </AnimatePresence>
