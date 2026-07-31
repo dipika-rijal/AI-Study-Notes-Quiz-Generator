@@ -90,9 +90,9 @@ export const Modal: React.FC<ModalProps> = ({
     borderRadius: borderRadiusTokens.xl,
     boxShadow: shadowTokens['2xl'],
     border: tone === 'dark' ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid var(--color-border)',
-    maxHeight: '90vh',
-    overflowY: 'auto' as const,
-    overflowX: 'hidden' as const,
+    maxHeight: '85vh',
+    display: 'flex',
+    flexDirection: 'column' as const,
     ...sizeStyles[size],
   };
 
@@ -102,6 +102,7 @@ export const Modal: React.FC<ModalProps> = ({
     justifyContent: 'space-between',
     padding: '24px',
     borderBottom: '1px solid var(--color-border)',
+    flexShrink: 0,
   };
 
   const titleStyle = {
@@ -126,10 +127,14 @@ export const Modal: React.FC<ModalProps> = ({
     fontWeight: '900',
     cursor: 'pointer',
     transition: 'all 150ms ease',
+    flexShrink: 0,
   };
 
   const contentStyle = {
     padding: tone === 'dark' ? '20px' : '24px',
+    overflowY: 'auto' as const,
+    overflowX: 'hidden' as const,
+    flex: 1,
   };
 
   return (
