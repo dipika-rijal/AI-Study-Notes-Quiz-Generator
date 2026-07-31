@@ -86,12 +86,12 @@ export default function App() {
 
   if (!authReady) {
     return (
-      <div className="grid min-h-screen place-items-center">
+      <div className="grid min-h-screen place-items-center" style={{ background: 'var(--theme-bg-primary)' }}>
         <div className="surface-card px-8 py-6 text-center">
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#10a37f] to-[#05503e] text-white">
             ✦
           </div>
-          <p className="font-black text-[var(--theme-glow-purple)]">Loading StudyGen AI...</p>
+          <p className="font-black text-primary">Loading StudyGen AI...</p>
         </div>
       </div>
     );
