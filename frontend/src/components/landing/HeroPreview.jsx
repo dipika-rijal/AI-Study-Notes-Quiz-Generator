@@ -1,6 +1,6 @@
 export default function HeroPreview() {
   return (
-    <div className="relative min-h-[560px] transform scale-[0.85] origin-top lg:scale-100">
+    <div className="relative min-h-[560px] transform scale-[0.85] origin-top sm:scale-100">
       <div className="absolute inset-0 rounded-[40px] bg-[radial-gradient(circle_at_45%_12%,rgba(103,87,255,0.13),transparent_30%),radial-gradient(circle_at_78%_72%,rgba(255,216,182,0.45),transparent_32%)]" />
 
       <div className="absolute left-8 top-2 rounded-full border border-purple-100 bg-white/80 px-4 py-2 text-xs font-black text-[#6757ff] shadow-lg">
