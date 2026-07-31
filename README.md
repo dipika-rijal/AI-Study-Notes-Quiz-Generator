@@ -64,4 +64,4 @@ Tests critical React components like the application `ErrorBoundary`.
 - **Frontend** deploys automatically via Netlify.
 - **Backend** deploys via Render, triggered by GitHub actions.
 
-*(If you are deploying live, remember to set your environment variables on Render and Netlify dashboards, and add your live URLs here!)*
+
