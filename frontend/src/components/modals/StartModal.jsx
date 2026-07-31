@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Modal, Card, Badge } from "../../design-system";
+import { Modal, Card } from "../../design-system";
 
 export default function StartModal({
   modalType,
@@ -105,9 +105,35 @@ export default function StartModal({
       </div>
 
       {!user && (
+
         <Badge variant="primary" size="md" className="mt-6" style={{ display: 'block', textAlign: 'center', padding: '12px 16px', whiteSpace: 'normal', lineHeight: '1.6', borderRadius: '12px' }}>
           Login is required because your generated notes and quizzes will belong to your account.
         </Badge>
+=======
+        <div
+          className="mt-6"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+            padding: '14px 16px',
+            borderRadius: '14px',
+            background: 'rgba(103, 87, 255, 0.07)',
+            border: '1px solid rgba(103, 87, 255, 0.18)',
+          }}
+        >
+          <span style={{ fontSize: '16px', lineHeight: '1', marginTop: '2px', flexShrink: 0 }}>🔐</span>
+          <p style={{
+            margin: 0,
+            fontSize: '13px',
+            lineHeight: '1.6',
+            color: 'var(--color-text-secondary)',
+          }}>
+            <strong style={{ color: '#6757ff', fontWeight: 700 }}>Login required.</strong>{' '}
+            Your generated notes and quizzes will be saved to your account.
+          </p>
+        </div>
+
       )}
     </Modal>
   );
