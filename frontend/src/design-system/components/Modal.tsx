@@ -91,7 +91,8 @@ export const Modal: React.FC<ModalProps> = ({
     boxShadow: shadowTokens['2xl'],
     border: tone === 'dark' ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid var(--color-border)',
     maxHeight: '90vh',
-    overflow: 'hidden',
+    overflowY: 'auto' as const,
+    overflowX: 'hidden' as const,
     ...sizeStyles[size],
   };
 
