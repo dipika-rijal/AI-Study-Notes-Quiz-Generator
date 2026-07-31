@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Copy, RotateCcw } from 'lucide-react';
 import MarkdownRenderer from "./MarkdownRenderer";
@@ -33,6 +33,14 @@ export default function ChatMessage({
   const { role, content, type, options, data, title, category, saved, dbNoteId } = message;
   const isUser = role === "user";
   const shouldReduceMotion = useReducedMotion();
+
+  const handleAnswerUpdate = useCallback((quizState) => {
+    if (onUpdateMessage) onUpdateMessage(message.id, { quizState });
+  }, [message.id, onUpdateMessage]);
+
+  const handleQuizSubmitted = useCallback((result) => {
+    if (onQuizSubmitted) onQuizSubmitted(message.id, result);
+  }, [message.id, onQuizSubmitted]);
 
   const containerVariants = {
     hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 12 },
@@ -78,10 +86,8 @@ export default function ChatMessage({
             <InteractiveQuiz 
               data={data} 
               initialAnswers={message.quizState || {}}
-              onAnswerUpdate={(quizState) => {
-                if (onUpdateMessage) onUpdateMessage(message.id, { quizState });
-              }}
-              onQuizSubmitted={(result) => onQuizSubmitted?.(message.id, result)}
+              onAnswerUpdate={handleAnswerUpdate}
+              onQuizSubmitted={handleQuizSubmitted}
             />
           </Suspense>
         ) : type === "flashcards" ? (

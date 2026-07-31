@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
-  timeout: 5000, // Added timeout to prevent infinite hang if backend is down
+  timeout: 60000, // Increased timeout to 60s for slow AI requests
 });
 
 // Attach Firebase ID token to every outgoing request

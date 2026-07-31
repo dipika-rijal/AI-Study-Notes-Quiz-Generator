@@ -14,25 +14,28 @@ router.post("/session-login", async (req, res) => {
 
     const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
 
+    const isProd = process.env.NODE_ENV === "production";
+
     res.cookie("session", sessionCookie, {
       maxAge: expiresIn,
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
     });
 
     res.json({ success: true, uid: decoded.uid });
   } catch (err) {
-    console.error("session-login error:", err.message); // temp: see the real reason in Render logs
+    console.error("session-login error:", err.message);
     sendError(res, "Failed to create session", 401);
   }
 });
 
 router.post("/logout", (req, res) => {
+  const isProd = process.env.NODE_ENV === "production";
   res.clearCookie("session", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   });
   res.json({ success: true });
 });

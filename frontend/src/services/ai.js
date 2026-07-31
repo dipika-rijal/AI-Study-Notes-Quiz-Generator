@@ -223,6 +223,7 @@ export async function* streamAIChatResponse(messages) {
 
   const response = await fetch(`${API_URL}/ai/chat/stream`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
