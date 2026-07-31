@@ -528,7 +528,7 @@ export default function CreateQuiz() {
   const weakAreas = quiz ? getWeakAreas(quiz.questions, answers, topic) : [];
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
+    <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
       <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-5">
         <div className="flex items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary-500)] text-xl text-white shadow-md">

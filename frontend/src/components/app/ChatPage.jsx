@@ -58,7 +58,7 @@ export default function ChatPage() {
   const hasConversationMessages = messages.some((message) => message.id !== "greeting");
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col bg-transparent">
+    <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
       {/* Chat header area */}
       <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-5 select-none">
         <div className="flex items-center gap-3">

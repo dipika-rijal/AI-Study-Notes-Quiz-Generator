@@ -35,7 +35,7 @@ export default function Tutor() {
 
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-3rem)] w-full max-w-6xl flex-col bg-transparent">
+    <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
       {/* Header */}
       <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--theme-glass-border)] pb-5 select-none">
         <div className="flex items-center gap-3">
