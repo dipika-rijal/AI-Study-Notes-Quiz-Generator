@@ -105,11 +105,6 @@ export default function StartModal({
       </div>
 
       {!user && (
-
-        <Badge variant="primary" size="md" className="mt-6" style={{ display: 'block', textAlign: 'center', padding: '12px 16px', whiteSpace: 'normal', lineHeight: '1.6', borderRadius: '12px' }}>
-          Login is required because your generated notes and quizzes will belong to your account.
-        </Badge>
-=======
         <div
           className="mt-6"
           style={{
@@ -133,7 +128,6 @@ export default function StartModal({
             Your generated notes and quizzes will be saved to your account.
           </p>
         </div>
-
       )}
     </Modal>
   );
