@@ -712,25 +712,25 @@ export default function CreateQuiz() {
                       <button
                         type="button"
                         onClick={goToPreviousQuestion}
-                        className="rounded-2xl border border-gray-200 dark:border-[#424242] bg-white dark:bg-[#171717] px-5 py-3 text-sm font-black text-gray-600 dark:text-[#b4b4b4] shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-[#2f2f2f]"
+                        className="rounded-2xl border border-gray-200 dark:border-[#424242] bg-white dark:bg-[#171717] px-3 py-2.5 sm:px-5 sm:py-3 text-sm font-black text-gray-600 dark:text-[#b4b4b4] shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:bg-gray-50 dark:hover:bg-[#2f2f2f]"
                       >
                         Previous
                       </button>
                     ) : <div></div>}
-                    <div className="flex gap-3">
+                    <div className="flex gap-1.5 sm:gap-3">
                       <button
                         type="button"
                         onClick={handleQuit}
-                        className="rounded-2xl border border-red-100 dark:border-red-900/50 bg-white dark:bg-[#171717] px-5 py-3 text-sm font-black text-red-500 dark:text-red-400 shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="rounded-2xl border border-red-100 dark:border-red-900/50 bg-white dark:bg-[#171717] px-3 py-2.5 sm:px-5 sm:py-3 text-sm font-black text-red-500 dark:text-red-400 shadow-sm dark:shadow-none transition hover:-translate-y-0.5 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         Quit
                       </button>
                       <button
                         type="button"
                         onClick={goToNextQuestion}
-                        className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 dark:from-[#10a37f] dark:to-[#05503e] px-5 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 dark:shadow-none transition hover:-translate-y-0.5"
+                        className="rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 dark:from-[#10a37f] dark:to-[#05503e] px-3 py-2.5 sm:px-5 sm:py-3 text-sm font-black text-white shadow-lg shadow-orange-100 dark:shadow-none transition hover:-translate-y-0.5 whitespace-nowrap"
                       >
-                        {currentQuestionIndex < totalQuestions - 1 ? "Next Question" : "Finish Quiz"}
+                        {currentQuestionIndex < totalQuestions - 1 ? <><span className="sm:hidden">Next</span><span className="hidden sm:inline">Next Question</span></> : <><span className="sm:hidden">Finish</span><span className="hidden sm:inline">Finish Quiz</span></>}
                       </button>
                     </div>
                     </div>

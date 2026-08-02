@@ -34,9 +34,9 @@ import ErrorBoundary from "./components/ErrorBoundary";
 
 function LandingPage({ setModalType, setAuthMode }) {
   return (
-    <div className="min-h-screen overflow-hidden">
-      <div className="pointer-events-none fixed -left-32 top-20 h-96 w-96 rounded-full bg-[#10a37f]/20 blur-3xl" />
-      <div className="pointer-events-none fixed -right-40 top-24 h-[420px] w-[420px] rounded-full bg-[#10a37f]/10 blur-3xl" />
+    <div className="min-h-screen relative overflow-x-clip">
+      <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-[#10a37f]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -right-40 top-24 h-[420px] w-[420px] rounded-full bg-[#10a37f]/10 blur-3xl" />
 
       <Navbar openModal={setModalType} openAuthModal={setAuthMode} />
 

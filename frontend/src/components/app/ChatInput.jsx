@@ -175,7 +175,7 @@ export default function ChatInput({
           disabled={disabled || isInputLoading}
           rows={1}
           style={{ height: "auto" }}
-          className="max-h-40 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm font-medium leading-relaxed text-[var(--theme-text-primary)] outline-none placeholder:text-[var(--theme-text-muted)] disabled:cursor-not-allowed"
+          className="min-w-0 max-h-40 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm font-medium leading-relaxed text-[var(--theme-text-primary)] outline-none placeholder:text-[var(--theme-text-muted)] disabled:cursor-not-allowed"
         />
 
         {/* Send Button */}

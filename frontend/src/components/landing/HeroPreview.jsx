@@ -1,6 +1,6 @@
 export default function HeroPreview() {
   return (
-    <div className="relative min-h-[560px] transform scale-[0.85] origin-top sm:scale-100">
+    <div className="relative min-h-[560px]">
       <div className="absolute inset-0 rounded-[40px] bg-[radial-gradient(circle_at_45%_12%,rgba(103,87,255,0.13),transparent_30%),radial-gradient(circle_at_78%_72%,rgba(255,216,182,0.45),transparent_32%)]" />
 
       <div className="absolute left-8 top-2 rounded-full border border-purple-100 bg-white/80 px-4 py-2 text-xs font-black text-[#6757ff] shadow-lg">
@@ -15,8 +15,8 @@ export default function HeroPreview() {
         summary made
       </div>
 
-      <div className="absolute right-4 top-10 w-[380px] rotate-1 rounded-3xl border border-purple-100 bg-white/85 p-5 shadow-2xl shadow-purple-200/60 backdrop-blur-xl transition hover:-translate-y-1">
-        <div className="mb-4 flex items-center justify-between text-xs font-black text-[#746d8b]">
+      <div className="absolute left-1/2 top-10 w-[92%] max-w-[380px] -translate-x-1/2 rotate-1 rounded-3xl border border-purple-100 bg-white/85 p-5 shadow-2xl shadow-purple-200/60 backdrop-blur-xl transition hover:-translate-y-1 sm:left-auto sm:right-4 sm:translate-x-0">
+        <div className="mb-4 flex items-center justify-between text-[13px] font-extrabold tracking-tight text-[#15132b]">
           <div className="flex gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
@@ -50,14 +50,14 @@ export default function HeroPreview() {
         </div>
       </div>
 
-      <div className="absolute left-[45%] top-[230px] z-10 flex items-center gap-2 rounded-full border border-purple-100 bg-white/60 px-3 py-2 shadow-lg backdrop-blur-md">
+      <div className="absolute left-1/2 top-[230px] z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-purple-100 bg-white/60 px-3 py-2 shadow-lg backdrop-blur-md sm:left-[45%] sm:translate-x-0">
         <span className="h-2 w-2 rounded-full bg-[#d8d0ff]" />
         <span className="h-2 w-2 rounded-full bg-[#c5b8ff]" />
         <span className="h-2 w-2 rounded-full bg-[#a996ff]" />
       </div>
 
-      <div className="absolute left-0 top-[260px] w-[330px] -rotate-1 rounded-3xl border border-purple-100 bg-white/85 p-5 shadow-2xl shadow-purple-200/60 backdrop-blur-xl transition hover:-translate-y-1">
-        <div className="mb-4 flex items-center justify-between text-xs font-black text-[#746d8b]">
+      <div className="absolute left-1/2 top-[260px] w-[92%] max-w-[330px] -translate-x-1/2 -rotate-1 rounded-3xl border border-purple-100 bg-white/85 p-5 shadow-2xl shadow-purple-200/60 backdrop-blur-xl transition hover:-translate-y-1 sm:left-0 sm:translate-x-0">
+        <div className="mb-4 flex items-center justify-between text-[13px] font-extrabold tracking-tight text-[#15132b]">
           <span>▣ Clean Summary</span>
           <span className="rounded-full bg-[#eeeaff] px-3 py-1 text-[#6757ff]">
             AI
@@ -82,8 +82,8 @@ export default function HeroPreview() {
         </div>
       </div>
 
-      <div className="absolute bottom-5 right-2 w-[390px] rotate-1 rounded-3xl border border-purple-100 bg-white/85 p-5 shadow-2xl shadow-purple-200/60 backdrop-blur-xl transition hover:-translate-y-1">
-        <div className="mb-4 flex items-center justify-between text-xs font-black text-[#746d8b]">
+      <div className="absolute bottom-5 left-1/2 w-[92%] max-w-[390px] -translate-x-1/2 rotate-1 rounded-3xl border border-purple-100 bg-white/85 p-5 shadow-2xl shadow-purple-200/60 backdrop-blur-xl transition hover:-translate-y-1 sm:left-auto sm:right-2 sm:translate-x-0">
+        <div className="mb-4 flex items-center justify-between text-[13px] font-extrabold tracking-tight text-[#15132b]">
           <span>◎ Practice Quiz</span>
           <span className="rounded-full bg-[#fff0d0] px-3 py-1 text-orange-500">
             MCQ

@@ -113,9 +113,6 @@ export default function Settings({ user, onEditProfile }) {
                 />
               </div>
             </div>
-            <p className="mt-4 text-[11px] text-[var(--theme-text-muted)] text-center">
-              Hover a row to see the highlight. Tap change password or delete account to see the modal open.
-            </p>
           </motion.section>
         </div>
       </motion.div>

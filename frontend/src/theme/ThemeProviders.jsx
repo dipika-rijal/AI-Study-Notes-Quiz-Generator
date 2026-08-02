@@ -108,7 +108,17 @@ export const AppThemeProvider = ({ children, noStyles = false }) => {
 
   // Prevent flash: show nothing until preferences loaded
   if (!isLoaded) {
-    return <div style={noStyles ? {} : { minHeight: '100vh', background: '#fcfbf9' }} />;
+    if (noStyles) return null;
+    return (
+      <div className="grid min-h-screen place-items-center" style={{ background: 'var(--theme-bg-primary)' }}>
+        <div className="surface-card px-8 py-6 text-center">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[#10a37f] to-[#05503e] text-white">
+            ✦
+          </div>
+          <p className="font-black text-primary">Loading StudyGen AI...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

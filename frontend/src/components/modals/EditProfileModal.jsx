@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Camera, Save } from 'lucide-react';
+import { useAppTheme } from '../../theme/ThemeProviders';
 
 export default function EditProfileModal({ isOpen, onClose, user, onSave }) {
+  const appTheme = useAppTheme();
+  const currentTheme = appTheme?.theme || 'dark';
   const [displayName, setDisplayName] = useState('');
   const [studyFocus, setStudyFocus] = useState('');
   const [avatarFile, setAvatarFile] = useState(null);
@@ -98,6 +101,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSave }) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-profile-title"
+            data-theme={currentTheme}
             className="relative w-full max-w-md overflow-hidden rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] shadow-2xl"
           >
             {/* Header */}
