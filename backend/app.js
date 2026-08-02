@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
@@ -54,6 +54,7 @@ app.use(
 
       if (
         origin === CLIENT_URL ||
+        /^https:\/\/ai-study-notes-quiz-generator-.*-study-gen-ai\.vercel\.app$/.test(origin) ||
         (process.env.NODE_ENV === "development" &&
           origin.startsWith("http://localhost:"))
       ) {
