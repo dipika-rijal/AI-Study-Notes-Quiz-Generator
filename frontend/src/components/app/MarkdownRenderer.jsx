@@ -76,7 +76,7 @@ export default function MarkdownRenderer({ content }) {
             </ol>
           ),
           li: ({ children }) => <li className="leading-7">{children}</li>,
-          strong: ({ children }) => <strong className="font-bold text-[var(--theme-text-primary)] dark:text-white drop-shadow-sm">{children}</strong>,
+          strong: ({ children }) => <strong className="font-bold text-[var(--theme-text-primary)] drop-shadow-sm">{children}</strong>,
           code: ({ className, children, node, ...props }) => {
             const match = /language-(\w+)/.exec(className || "");
             const isBlock = match || String(children).includes("\n");

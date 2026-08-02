@@ -5,6 +5,7 @@ import { useTheme } from '../hooks/useTheme';
 import { buttonTap, revealItem, staggerContainer } from '../lib/motion';
 import ChangePasswordModal from '../components/modals/ChangePasswordModal';
 import DeleteAccountModal from '../components/modals/DeleteAccountModal';
+import EditProfileModal from '../components/modals/EditProfileModal';
 
 function SettingRow({ icon: Icon, title, description, action, onClick, isDestructive }) {
   return (
@@ -28,10 +29,11 @@ function SettingRow({ icon: Icon, title, description, action, onClick, isDestruc
   );
 }
 
-export default function Settings({ user, onEditProfile }) {
+export default function Settings({ user, onProfileUpdate }) {
   const { theme, toggleTheme } = useTheme();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
   
   const name = user?.displayName || user?.email?.split('@')[0] || 'Student';
   
@@ -56,7 +58,7 @@ export default function Settings({ user, onEditProfile }) {
                   <motion.button 
                     whileTap={buttonTap} 
                     type="button" 
-                    onClick={onEditProfile} 
+                    onClick={() => setIsProfileEditorOpen(true)} 
                     className="rounded-lg border border-[var(--theme-glass-border)] px-3 py-2 text-xs font-medium text-[var(--theme-text-primary)] transition hover:bg-[var(--theme-bg-tertiary)]"
                   >
                     Edit profile
@@ -126,6 +128,12 @@ export default function Settings({ user, onEditProfile }) {
         isOpen={isDeleteModalOpen} 
         onClose={() => setIsDeleteModalOpen(false)} 
         user={user} 
+      />
+      <EditProfileModal
+        isOpen={isProfileEditorOpen}
+        onClose={() => setIsProfileEditorOpen(false)}
+        user={user}
+        onSave={onProfileUpdate}
       />
     </>
   );

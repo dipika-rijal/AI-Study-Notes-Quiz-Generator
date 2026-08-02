@@ -90,7 +90,7 @@ export default function EditProfileModal({ isOpen, onClose, user, onSave }) {
             animate="visible"
             exit="exit"
             onClick={onClose}
-            className="absolute inset-0 bg-[#0a0a0c]/60"
+            className="absolute inset-0 bg-black/60"
           />
           
           <motion.div

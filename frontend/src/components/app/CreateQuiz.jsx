@@ -535,10 +535,10 @@ export default function CreateQuiz() {
             Q
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#15132b] dark:text-[#ececec]">
+            <h1 className="text-xl font-black tracking-tight text-[var(--theme-text-primary)]">
               Quiz Assistant
             </h1>
-            <p className="text-xs font-semibold text-[#9a93b3] dark:text-[#999999]">
+            <p className="text-xs font-semibold text-[var(--theme-text-secondary)]">
               Create focused practice from a topic, file, or saved notes.
             </p>
           </div>
@@ -547,7 +547,7 @@ export default function CreateQuiz() {
         <button
           type="button"
           onClick={restartQuiz}
-          className="rounded-xl border border-orange-100 dark:border-[#424242] bg-white dark:bg-[#2f2f2f] px-4 py-2 text-xs font-black text-[#8a83a5] dark:text-[#b4b4b4] shadow-sm dark:shadow-none transition hover:bg-[#fff5ec] dark:hover:bg-[#171717]"
+          className="rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-4 py-2 text-xs font-black text-[var(--theme-text-secondary)] shadow-sm transition hover:bg-[var(--theme-bg-tertiary)]"
         >
           Start Over
         </button>
@@ -773,18 +773,18 @@ export default function CreateQuiz() {
       )}
 
       <footer className="mx-auto w-full max-w-[920px]">
-        <form onSubmit={handleTextSubmit} className="relative flex items-end gap-2 rounded-[28px] border border-orange-100 dark:border-[#424242] bg-[#f3eee8] dark:bg-[#171717] p-2 focus-within:border-orange-400 dark:focus-within:border-[#10a37f] focus-within:bg-white dark:focus-within:bg-[#2f2f2f] transition shadow-inner dark:shadow-none">
+        <form onSubmit={handleTextSubmit} className="relative flex items-end gap-2 rounded-[28px] border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-2 focus-within:border-[var(--color-primary-500)] focus-within:ring-2 focus-within:ring-[var(--color-primary-500)]/10 transition shadow-sm">
           <textarea
             name="message"
             disabled={step !== "waitingForTopic" || isGenerating}
             placeholder={step === "waitingForTopic" ? "Enter a quiz topic..." : "Use the choices above to continue..."}
             rows={1}
-            className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm font-semibold leading-relaxed text-[#15132b] dark:text-[#ececec] outline-none placeholder:text-[#b7adc4] dark:placeholder:text-[#999999] disabled:cursor-not-allowed"
+            className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm font-semibold leading-relaxed text-[var(--theme-text-primary)] outline-none placeholder:text-[var(--theme-text-muted)] disabled:cursor-not-allowed"
           />
           <button
             type="submit"
             disabled={step !== "waitingForTopic" || isGenerating}
-            className="h-11 rounded-2xl bg-gradient-to-r from-orange-400 to-amber-400 dark:from-[#10a37f] dark:to-[#05503e] px-5 text-sm font-black text-white shadow-md shadow-orange-100 dark:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 rounded-2xl bg-[var(--color-primary-500)] px-5 text-sm font-black text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50 hover:brightness-110 transition"
           >
             Send
           </button>

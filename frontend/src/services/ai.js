@@ -213,7 +213,7 @@ export async function* streamAIChatResponse(messages) {
     temperature: 0.4,
   };
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_BASE_URL;
   await auth.authStateReady();
   const user = auth.currentUser;
   if (!user) {

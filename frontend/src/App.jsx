@@ -26,7 +26,6 @@ import FocusMode from "./pages/FocusMode";
 import Settings from "./pages/Settings";
 import Tutor from "./pages/Tutor";
 import Planner from "./pages/Planner";
-import EditProfileModal from "./components/modals/EditProfileModal";
 
 import ProtectedRoute from "./components/routes/ProtectedRoute";
 import GuestRoute from "./components/routes/GuestRoute";
@@ -59,7 +58,6 @@ export default function App() {
   const [authMode, setAuthMode] = useState(null);
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
-  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
   const [profileDetails, setProfileDetails] = useState({});
 
   useEffect(() => {
@@ -136,7 +134,7 @@ export default function App() {
           <Route path="focus" element={<FocusMode />} />
           <Route
             path="settings"
-            element={<Settings user={workspaceUser} onEditProfile={() => setIsProfileEditorOpen(true)} />}
+            element={<Settings user={workspaceUser} onProfileUpdate={handleProfileSave} />}
           />
         </Route>
 
@@ -160,17 +158,6 @@ export default function App() {
           onAuthenticated={() => navigate("/app", { replace: true })}
         />
       </LandingThemeProvider>
-
-      {authReady && (
-        <AppThemeProvider noStyles>
-          <EditProfileModal
-            isOpen={isProfileEditorOpen}
-            onClose={() => setIsProfileEditorOpen(false)}
-            user={workspaceUser}
-            onSave={handleProfileSave}
-          />
-        </AppThemeProvider>
-      )}
     </ErrorBoundary>
   );
 }
