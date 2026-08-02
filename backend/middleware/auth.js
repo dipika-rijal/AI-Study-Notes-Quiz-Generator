@@ -26,20 +26,29 @@ function initFirebaseAdmin() {
 
 initFirebaseAdmin();
 
-// Verifies the session cookie instead of a Bearer token now.
+// Accepts either a session cookie (desktop) or a Bearer ID token (iOS/Safari,
+// where cross-site cookies are blocked), so protected routes work on both.
 async function requireAuth(req, res, next) {
   try {
-    const sessionCookie = req.cookies?.session;
-
-    if (!sessionCookie) {
-      return sendError(res, "Authentication required", 401);
-    }
-
     if (!firebaseReady) {
       return sendError(res, "Auth service is not configured on the server", 503);
     }
 
-    const decoded = await getAuth().verifySessionCookie(sessionCookie, true); // true = check revocation
+    const sessionCookie = req.cookies?.session;
+    const authHeader = req.headers.authorization;
+    const bearerToken = authHeader?.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+    let decoded;
+
+    if (sessionCookie) {
+      decoded = await getAuth().verifySessionCookie(sessionCookie, true); // true = check revocation
+    } else if (bearerToken) {
+      decoded = await getAuth().verifyIdToken(bearerToken);
+    } else {
+      return sendError(res, "Authentication required", 401);
+    }
 
     if (!decoded.uid || typeof decoded.uid !== "string") {
       return sendError(res, "Invalid session", 401);
