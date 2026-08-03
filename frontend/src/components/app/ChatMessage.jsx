@@ -62,7 +62,7 @@ export default function ChatMessage({
       )}
 
       {/* Bubble Wrapper */}
-      <div className={`flex flex-col max-w-[85%] md:max-w-[75%] ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex flex-col ${type === 'notes' ? 'w-full max-w-full md:max-w-[95%]' : 'max-w-[85%] md:max-w-[75%]'} ${isUser ? "items-end" : "items-start"}`}>
         {/* Username/Label header */}
         <span className="mb-1.5 text-[11px] font-medium tracking-wide text-[var(--theme-text-muted)] select-none">
           {isUser ? "You" : "StudyGen AI"}
