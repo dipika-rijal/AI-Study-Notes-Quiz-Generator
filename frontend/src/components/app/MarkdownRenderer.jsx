@@ -63,7 +63,7 @@ export default function MarkdownRenderer({ content }) {
                 </div>
               );
             }
-            return <p className="mb-4 text-[var(--theme-text-secondary)] font-medium leading-7 whitespace-pre-line">{children}</p>;
+            return <p className="mb-5 text-[var(--theme-text-secondary)] font-medium leading-7">{children}</p>;
           },
           ul: ({ children }) => (
             <ul className="list-disc pl-5 mb-5 space-y-2 text-[var(--theme-text-secondary)] font-medium">

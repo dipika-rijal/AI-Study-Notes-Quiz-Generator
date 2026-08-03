@@ -529,16 +529,18 @@ export default function CreateQuiz() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
-      <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-5">
+      <header className="mb-2 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-3">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--color-primary-500)] text-xl text-white shadow-md">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-primary-500)] text-lg text-white shadow-sm">
             Q
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[var(--theme-text-primary)]">
-              Quiz Assistant
-            </h1>
-            <p className="text-xs font-semibold text-[var(--theme-text-secondary)]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold tracking-tight text-[var(--theme-text-primary)]">
+                Quiz Assistant
+              </h1>
+            </div>
+            <p className="text-xs text-[var(--theme-text-secondary)]">
               Create focused practice from a topic, file, or saved notes.
             </p>
           </div>
@@ -547,7 +549,7 @@ export default function CreateQuiz() {
         <button
           type="button"
           onClick={restartQuiz}
-          className="rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-4 py-2 text-xs font-black text-[var(--theme-text-secondary)] shadow-sm transition hover:bg-[var(--theme-bg-tertiary)]"
+          className="rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] px-4 py-2 text-xs font-medium text-[var(--theme-text-secondary)] shadow-sm transition hover:bg-[var(--theme-bg-tertiary)]"
         >
           Start Over
         </button>

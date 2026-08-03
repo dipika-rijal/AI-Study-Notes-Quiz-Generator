@@ -60,17 +60,19 @@ export default function ChatPage() {
   return (
     <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
       {/* Chat header area */}
-      <header className="mb-4 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-5 select-none">
+      <header className="mb-2 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-3 select-none">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-xl text-[var(--color-primary-600)]">
+          <div className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-lg text-[var(--color-primary-600)]">
             ✦
           </div>
           <div>
-            <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-primary-500)]"><Sparkles size={12} /> StudyGen AI</p>
-            <h1 className="text-xl font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
-              Study Assistant
-            </h1>
-            <p className="mt-1 text-sm text-[var(--theme-text-secondary)]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
+                Study Assistant
+              </h1>
+              <span className="hidden sm:flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-[var(--color-primary-500)]"><Sparkles size={10} /> StudyGen AI</span>
+            </div>
+            <p className="text-xs text-[var(--theme-text-secondary)]">
               Turn study material into clear notes, quizzes, and explanations.
             </p>
           </div>

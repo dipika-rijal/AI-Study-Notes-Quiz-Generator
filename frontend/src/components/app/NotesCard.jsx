@@ -171,7 +171,7 @@ export default function NotesCard({
   };
 
   return (
-    <div className="w-full rounded-3xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] p-5 shadow-sm dark:shadow-none shadow-purple-50">
+    <div className="w-full rounded-3xl border border-purple-100 dark:border-[#424242] bg-white dark:bg-[#171717] p-6 md:p-8 shadow-sm dark:shadow-none shadow-purple-50">
       {/* Category header */}
       <div className="flex items-center justify-between border-b border-purple-50 dark:border-[#424242] pb-3 mb-4">
         <span className="text-xs font-black uppercase tracking-widest text-[#6757ff] dark:text-[#10a37f]">

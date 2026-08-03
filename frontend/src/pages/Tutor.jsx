@@ -37,16 +37,18 @@ export default function Tutor() {
   return (
     <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
       {/* Header */}
-      <header className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--theme-glass-border)] pb-5 select-none">
+      <header className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--theme-glass-border)] pb-3 select-none">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-xl text-[var(--color-primary-600)]">
-            <GraduationCap size={20} />
+          <div className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-lg text-[var(--color-primary-600)]">
+            <GraduationCap size={16} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
-              AI Tutor
-            </h1>
-            <p className="mt-1 text-sm text-[var(--theme-text-secondary)]">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
+                AI Tutor
+              </h1>
+            </div>
+            <p className="text-xs text-[var(--theme-text-secondary)]">
               Your personal AI teacher that remembers your weaknesses.
             </p>
           </div>
