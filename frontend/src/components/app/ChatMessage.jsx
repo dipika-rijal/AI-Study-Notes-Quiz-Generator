@@ -27,7 +27,8 @@ export default function ChatMessage({
   onRegenerate,
   isGenerating,
   onUpdateMessage,
-  onQuizSubmitted
+  onQuizSubmitted,
+  onSaveNote
 }) {
   const { role, content, type, options, data, title, category, saved, dbNoteId } = message;
   const isUser = role === "user";
@@ -74,6 +75,13 @@ export default function ChatMessage({
             content={content}
             title={title}
             category={category}
+            saved={saved}
+            isGenerating={isGenerating}
+            onSave={() => onSaveNote && onSaveNote(message.id, {
+              title: title || "AI Study Notes",
+              category: category || "General",
+              body: content
+            })}
           />
         ) : type === "quiz" ? (
           <Suspense fallback={<div className="p-4 bg-purple-50 rounded-2xl animate-pulse text-xs text-[#6757ff]">Loading Quiz...</div>}>

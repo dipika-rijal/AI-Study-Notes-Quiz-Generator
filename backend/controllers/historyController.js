@@ -61,7 +61,9 @@ async function getHistory(req, res, next) {
     };
   });
 
-  const conversationItems = conversations.map(function (conv) {
+  const conversationItems = conversations
+    .filter(conv => String(conv._id).startsWith("tutor_"))
+    .map(function (conv) {
     let preview = conv.topic || "Conversation";
     if (conv.messages && conv.messages.length > 0) {
       const lastMsg = conv.messages[conv.messages.length - 1];
