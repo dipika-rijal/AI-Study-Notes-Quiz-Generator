@@ -58,7 +58,7 @@ export default function Contact() {
 
             {submitted && (
               <p className="mt-4 rounded-xl bg-[#edfff6] px-4 py-3 text-sm font-semibold text-emerald-700">
-                ✅ Message sent! We'll get back to you soon.
+                Message sent! We'll get back to you soon.
               </p>
             )}
             {error && (
