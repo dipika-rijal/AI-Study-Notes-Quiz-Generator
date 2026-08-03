@@ -55,8 +55,7 @@ const NOTE_PURPOSE_OPTIONS = [
 const FOLLOW_UP_ACTION_OPTIONS = [
   { value: "followup:ask", label: "Ask questions", icon: "?" },
   { value: "followup:quiz", label: "Generate quiz", icon: "Q" },
-  { value: "followup:flashcards", label: "Generate flashcards", icon: "F" },
-  { value: "followup:save", label: "Save to history", icon: "S" }
+  { value: "followup:flashcards", label: "Generate flashcards", icon: "F" }
 ];
 
 const NOTE_PURPOSE_CONFIG = {
@@ -1394,11 +1393,19 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
 
     // Trigger same style generation based on stage
     const lastAI = msgs[msgs.length - 1];
+    const lastAIContent = lastAI?.content || "";
+    
     if (lastAI && lastAI.type === "quiz") {
+      promptHistory.push({ role: "system", content: "Please generate a completely new, alternative version of the previous quiz." });
       await generateStructuredResponse(promptHistory, "quiz");
     } else if (lastAI && lastAI.type === "flashcards") {
+      promptHistory.push({ role: "system", content: "Please generate a completely new, alternative version of the previous flashcards." });
       await generateStructuredResponse(promptHistory, "flashcards");
     } else {
+      promptHistory.push({ 
+        role: "system", 
+        content: `Please generate a completely new, alternative version of your response. YOU MUST use the EXACT SAME formatting, structure, and markdown headers as this previous version:\n\n${lastAIContent}` 
+      });
       await streamAIResponse(promptHistory, lastAI?.type || "notes", {
         title: lastAI?.title || "Notes",
         category: lastAI?.category || "Notes"

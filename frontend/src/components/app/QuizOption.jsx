@@ -57,7 +57,7 @@ export default function QuizOption({
         >
           {String.fromCharCode(65 + index)}
         </div>
-        <span className="flex-1 font-medium text-[15px]">{option}</span>
+        <span className="flex-1 font-normal text-[15px]">{option}</span>
         
         {isCorrect && (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[var(--color-success-text)] text-lg">

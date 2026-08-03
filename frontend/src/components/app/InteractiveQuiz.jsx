@@ -297,7 +297,7 @@ export default function InteractiveQuiz({ data, initialAnswers = {}, onAnswerUpd
 
             {/* Question */}
             <div className="space-y-6">
-              <h3 className="text-xl md:text-2xl font-medium text-[var(--theme-text-primary)] leading-relaxed">
+              <h3 className="text-xl md:text-2xl font-bold text-[var(--theme-text-primary)] leading-relaxed">
                 {currentQuestion.question}
               </h3>
               

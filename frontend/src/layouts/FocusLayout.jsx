@@ -12,15 +12,10 @@ export const FocusLayout = () => {
   }, [setFocusMode]);
 
   return (
-    <div style={{ 
-      padding: "2rem", 
-      maxWidth: "800px", 
-      margin: "0 auto", 
-      background: "#fff", 
-      minHeight: "100vh",
-      boxShadow: "0 0 20px rgba(0,0,0,0.05)"
-    }}>
-      <Outlet />
+    <div className="min-h-screen w-full bg-[var(--theme-bg-primary)] flex flex-col items-center justify-center p-4 sm:p-8 md:p-12">
+      <div className="w-full max-w-6xl mx-auto">
+        <Outlet />
+      </div>
     </div>
   );
 };

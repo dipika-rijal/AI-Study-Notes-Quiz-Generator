@@ -23,9 +23,11 @@ export default function AppLayout({ user, logout }) {
         <main className="relative min-h-screen min-w-0 flex-1 overflow-y-auto px-5 pb-5 pt-20 sm:px-8 lg:px-10 lg:py-8">
           <button type="button" onClick={() => setIsSidebarOpen((isOpen) => !isOpen)} aria-label="Toggle sidebar" aria-expanded={isSidebarOpen} style={{ top: 'max(1.25rem, env(safe-area-inset-top))', left: 'max(1.25rem, env(safe-area-inset-left))' }} className="fixed z-40 grid h-11 w-11 place-items-center rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] shadow-sm transition hover:bg-[var(--theme-bg-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary-500)] sm:hidden"><Menu size={22} strokeWidth={2} /></button>
           
-          <div className="absolute right-5 top-5 sm:right-8 sm:top-8 z-10 lg:z-50">
-            <StreakWidget />
-          </div>
+          {!/^\/(app\/(notes|quiz|tutor))/.test(location.pathname) && (
+            <div className="absolute right-5 top-5 sm:right-8 sm:top-8 z-10 lg:z-50">
+              <StreakWidget />
+            </div>
+          )}
 
           <div className="mx-auto h-full max-w-6xl mt-4 lg:mt-0">
             <AnimatePresence mode="wait">

@@ -5,9 +5,9 @@ import { Trash2 } from 'lucide-react';
 export default function StudySessionCard({ 
   topic, 
   type = 'Notes', 
-  progress = '100%', 
+  progress = null, 
   date = 'Today', 
-  status = 'Completed', 
+  status = null, 
   link = '#',
   onRemove
 }) {
@@ -23,6 +23,9 @@ export default function StudySessionCard({
   } else if (status === 'Needs review') {
     statusColor = 'var(--color-warning-text)';
     statusDot = 'bg-[var(--color-warning-border)]';
+  } else if (status === 'Not started') {
+    statusColor = 'var(--theme-text-muted)';
+    statusDot = 'bg-gray-400';
   }
 
   return (
@@ -43,10 +46,14 @@ export default function StudySessionCard({
         <h4 className="text-lg font-medium text-[var(--theme-text-primary)] truncate">
           {topic}
         </h4>
-        <div className="flex items-center gap-2 mt-2">
-          <span className={`w-2 h-2 rounded-full ${statusDot}`}></span>
-          <span className="text-sm font-medium" style={{ color: statusColor }}>{status} ({progress})</span>
-        </div>
+        {status && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`w-2 h-2 rounded-full ${statusDot}`}></span>
+            <span className="text-sm font-medium" style={{ color: statusColor }}>
+              {status}{progress ? ` (${progress})` : ''}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

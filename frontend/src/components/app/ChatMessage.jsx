@@ -24,7 +24,6 @@ const FlashcardViewer = lazy(() => import("./FlashcardViewer"));
 export default function ChatMessage({
   message,
   onSelectOption,
-  onSaveNote,
   onRegenerate,
   isGenerating,
   onUpdateMessage,
@@ -75,11 +74,6 @@ export default function ChatMessage({
             content={content}
             title={title}
             category={category}
-            saved={saved}
-            dbNoteId={dbNoteId}
-            onSave={onSaveNote}
-            onRegenerate={onRegenerate}
-            isGenerating={isGenerating}
           />
         ) : type === "quiz" ? (
           <Suspense fallback={<div className="p-4 bg-purple-50 rounded-2xl animate-pulse text-xs text-[#6757ff]">Loading Quiz...</div>}>
@@ -104,12 +98,7 @@ export default function ChatMessage({
               }`}
           >
             {type === "loading" ? (
-              <div className="flex items-center gap-2 text-purple-400 py-1 select-none">
-                <span className="h-2 w-2 rounded-full bg-purple-400 animate-bounce [animation-delay:-0.3s]" />
-                <span className="h-2 w-2 rounded-full bg-purple-400 animate-bounce [animation-delay:-0.15s]" />
-                <span className="h-2 w-2 rounded-full bg-purple-400 animate-bounce" />
-                <span className="text-2xs font-extrabold ml-1">{content}</span>
-              </div>
+              <span className="text-sm font-semibold">{content}</span>
             ) : isUser ? (
               <p className="whitespace-pre-line">{content}</p>
             ) : message.id === "greeting" ? (

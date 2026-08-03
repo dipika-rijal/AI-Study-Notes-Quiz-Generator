@@ -27,7 +27,7 @@ function SidebarContent({ user, logout, onNavigate, onClose }) {
       <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--theme-text-muted)]">Workspace</p>
       {navigation.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} onClick={onNavigate} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] shadow-sm' : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-surface-hover)] hover:text-[var(--theme-text-primary)]'}`}><Icon size={17} strokeWidth={1.8} />{label}</NavLink>)}
       <p className="px-3 pb-2 pt-7 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--theme-text-muted)]">Focus</p>
-      <NavLink to="/app/focus" onClick={onNavigate} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-[var(--color-primary-500)] text-white' : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-surface-hover)] hover:text-[var(--theme-text-primary)]'}`}><Sparkles size={17} strokeWidth={1.8} />Focus mode</NavLink>
+      <NavLink to="/app/focus" onClick={onNavigate} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] shadow-sm' : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-surface-hover)] hover:text-[var(--theme-text-primary)]'}`}><Sparkles size={17} strokeWidth={1.8} />Focus mode</NavLink>
     </nav>
 
     <div className="space-y-1 border-t border-[var(--theme-glass-border)] pt-3">

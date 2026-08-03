@@ -465,6 +465,14 @@ export default function CreateQuiz() {
   async function confirmQuit(shouldSave) {
     if (shouldSave) {
       await saveAttempt("in_progress");
+    } else {
+      if (quiz?.quizId) {
+        try {
+          await api.delete(`/quizzes/${quiz.quizId}`);
+        } catch (error) {
+          console.error("Could not delete quiz", error);
+        }
+      }
     }
     setShowQuitModal(false);
     navigate("/app/history");
@@ -756,13 +764,6 @@ export default function CreateQuiz() {
             />
           )}
 
-          {isGenerating && (
-            <div className="flex justify-start">
-              <div className="rounded-3xl border border-orange-50 dark:border-[#10a37f]/50 bg-white dark:bg-[#171717] px-5 py-3.5 text-sm font-black text-orange-500 dark:text-[#10a37f] shadow-sm dark:shadow-none">
-                Generating quiz...
-              </div>
-            </div>
-          )}
 
           <div ref={messagesEndRef} />
         </div>

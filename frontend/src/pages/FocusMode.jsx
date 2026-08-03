@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import CircularTimer from '../components/ui/CircularTimer';
 import {
+  CloudRain, Waves, Flame,
+  Music, Sparkles, Heart, AudioWaveform,
+  Wind, Moon, Leaf, Coffee
+} from 'lucide-react';
+import {
   getActiveAmbientSound,
   playAmbientSound,
   stopAmbientSound as stopSharedAmbientSound,
@@ -20,11 +25,33 @@ export default function FocusMode() {
     audio.play().catch(() => {});
   };
 
-  const sounds = [
-    { id: 'none', label: 'None', icon: '🔇' },
-    { id: 'rain', label: 'Rain', icon: '🌧️', file: 'rain.mp3' },
-    { id: 'waves', label: 'Waves', icon: '🌊', file: 'waves.mp3' },
-    { id: 'fire', label: 'Fire', icon: '🔥', file: 'fire.mp3' },
+  const soundCategories = [
+    {
+      label: 'Nature',
+      sounds: [
+        { id: 'rain', label: 'Rain', icon: CloudRain, file: 'rain.mp3' },
+        { id: 'waves', label: 'Ocean Waves', icon: Waves, file: 'waves.mp3' },
+        { id: 'fire', label: 'Fireplace', icon: Flame, file: 'fire.mp3' },
+      ],
+    },
+    {
+      label: 'Music',
+      sounds: [
+        { id: 'ambient-piano', label: 'Ambient Piano', icon: Music, file: 'ambient-piano.mp3' },
+        { id: 'uplifting-piano', label: 'Uplifting Piano', icon: Sparkles, file: 'uplifting-piano.mp3' },
+        { id: 'emotional', label: 'Emotional', icon: Heart, file: 'emotional.mp3' },
+        { id: 'playful-beats', label: 'Playful Beats', icon: AudioWaveform, file: 'playful-beats.mp3' },
+      ],
+    },
+    {
+      label: 'Ambiance',
+      sounds: [
+        { id: 'peaceful', label: 'Peaceful', icon: Wind, file: 'peaceful.mp3' },
+        { id: 'smooth', label: 'Smooth', icon: Moon, file: 'smooth.mp3' },
+        { id: 'calm-energy', label: 'Calm Energy', icon: Leaf, file: 'calm-energy.mp3' },
+        { id: 'deep-calm', label: 'Deep Calm', icon: Coffee, file: 'deep-calm.mp3' },
+      ],
+    },
   ];
 
   const stopAmbientSound = () => {
@@ -78,7 +105,7 @@ export default function FocusMode() {
   const progress = ((25 * 60 - timeLeft) / (25 * 60)) * 100;
 
   return (
-    <div className="relative min-h-[80vh] flex flex-col items-center justify-center p-6 overflow-hidden rounded-3xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] shadow-sm">
+    <div className="relative w-full lg:h-[600px] flex flex-col items-center justify-center p-8 lg:p-12 overflow-hidden rounded-3xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] shadow-sm">
       {/* Ambient Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -99,12 +126,11 @@ export default function FocusMode() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center space-y-12 w-full"
+      <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16 h-full">
+        
+        {/* LEFT COLUMN: Timer & Controls */}
+        <div
+          className="text-center space-y-8 w-full lg:w-[45%] flex flex-col items-center justify-center h-full flex-shrink-0"
         >
           {/* Header */}
           <div className="space-y-2">
@@ -113,7 +139,7 @@ export default function FocusMode() {
           </div>
 
           {/* Timer */}
-          <div className="py-8">
+          <div className="py-2">
             <CircularTimer 
               progress={progress} 
               timeLeft={formatTime(timeLeft)} 
@@ -125,11 +151,7 @@ export default function FocusMode() {
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={toggleTimer}
-              className={`px-8 py-3 rounded-full text-sm font-medium transition-all duration-300 shadow-sm ${
-                isActive 
-                  ? 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] border border-[var(--theme-glass-border)]' 
-                  : 'bg-[var(--color-primary-500)] text-white hover:bg-[var(--color-primary-600)]'
-              }`}
+              className="px-8 py-3 rounded-full text-sm font-medium transition-all duration-300 shadow-sm bg-[var(--color-primary-500)] text-white hover:bg-[var(--color-primary-600)]"
             >
               {isActive ? 'Pause' : 'Start Focus'}
             </button>
@@ -140,45 +162,75 @@ export default function FocusMode() {
               Reset
             </button>
           </div>
+        </div>
 
-          {/* Ambient Sound Selector */}
-          <div className="pt-8 border-t border-[var(--theme-glass-border)] w-full">
-            <p className="text-xs font-semibold tracking-wider uppercase text-[var(--theme-text-muted)] mb-4 text-center">
-              Ambient Environment
-            </p>
-            <div className="flex justify-center gap-2">
-              {sounds.map(sound => (
-                <button
-                  key={sound.id}
-                  onClick={() => selectAmbientSound(sound)}
-                  className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all duration-300 ${
-                    selectedSound === sound.id
-                      ? 'bg-[var(--theme-bg-tertiary)] border border-[var(--color-primary-500)] text-[var(--color-primary-500)] shadow-sm'
-                      : 'bg-transparent border border-transparent text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]'
-                  }`}
-                  title={sound.label}
-                >
-                  <span className="text-xl">{sound.icon}</span>
-                  <span className="text-[10px] font-medium hidden sm:block">{sound.label}</span>
-                </button>
-              ))}
-            </div>
-            {selectedSound !== 'none' && (
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <span className="text-xs text-[var(--theme-text-secondary)]">
-                  {isSoundPlaying ? 'Playing in a loop' : 'Sound is paused'}
-                </span>
+        {/* RIGHT COLUMN: Ambient Sound Selector */}
+        <div
+          className="w-full lg:w-[55%] lg:border-l border-[var(--theme-glass-border)] lg:pl-10 h-full flex flex-col overflow-hidden py-4"
+        >
+          <div className="w-full flex flex-col h-full overflow-hidden">
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <p className="text-sm font-semibold tracking-wider uppercase text-[var(--theme-text-muted)]">
+                Ambient Environment
+              </p>
+              {selectedSound !== 'none' && (
                 <button
                   type="button"
                   onClick={stopAmbientSound}
-                  className="rounded-lg border border-[var(--theme-glass-border)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-text-secondary)] transition-colors hover:border-red-400 hover:text-red-500"
+                  className="rounded-full bg-[var(--color-error-bg)] px-3 py-1 text-xs font-semibold text-[var(--color-error-text)] transition hover:bg-[var(--theme-bg-tertiary)] hover:text-red-500 flex items-center gap-1.5 border border-[var(--color-error-border)]"
                 >
-                  Stop sound
+                  <span>Stop</span> <span className="hidden sm:inline">Sound</span>
                 </button>
+              )}
+            </div>
+
+            <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar text-left">
+              {soundCategories.map((category) => (
+                <div key={category.label}>
+                  <p className="text-xs font-medium text-[var(--theme-text-secondary)] mb-2.5 pl-1">
+                    {category.label}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {category.sounds.map((sound) => {
+                      const Icon = sound.icon;
+                      return (
+                        <button
+                          key={sound.id}
+                          onClick={() => selectAmbientSound(sound)}
+                          className={`p-3 rounded-xl flex flex-col items-center justify-center gap-2 transition-all duration-300 border ${
+                            selectedSound === sound.id
+                              ? 'bg-[var(--theme-bg-tertiary)] border-[var(--color-primary-500)] shadow-sm text-[var(--color-primary-500)]'
+                              : 'bg-transparent border-[var(--theme-glass-border)] hover:bg-[var(--theme-surface-hover)] hover:border-[var(--color-border-hover)] text-[var(--theme-text-secondary)]'
+                          }`}
+                          title={sound.label}
+                        >
+                          <Icon size={24} strokeWidth={1.5} className="mb-0.5" />
+                          <span className="text-[10px] font-semibold text-center leading-tight truncate w-full px-1">
+                            {sound.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {selectedSound !== 'none' && (
+              <div className="mt-4 flex items-center justify-center">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-xs font-medium text-[var(--theme-text-secondary)]">
+                  <span className="relative flex h-2 w-2">
+                    {isSoundPlaying && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-primary-500)] opacity-75"></span>
+                    )}
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-primary-500)]"></span>
+                  </span>
+                  {isSoundPlaying ? 'Playing in background' : 'Sound paused'}
+                </span>
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

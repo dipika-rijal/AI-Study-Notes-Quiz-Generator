@@ -8,10 +8,13 @@ import api from "../api/axios";
 import StudySessionCard from "../components/app/StudySessionCard";
 import QuizReview from "../components/app/QuizReview";
 
+// Cache history data so revisits don't flash a loader
+const historyCache = new Map();
+
 export default function History() {
-  const [data, setData] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(() => historyCache.get(activeTab) || null);
+  const [loading, setLoading] = useState(() => !historyCache.has(activeTab));
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedAttemptId, setExpandedAttemptId] = useState(null);
@@ -22,20 +25,29 @@ export default function History() {
 
   async function loadHistory(type = "all") {
     try {
-      setLoading(true);
+      // Only show loading spinner if we have no cached data for this tab
+      if (!historyCache.has(type)) setLoading(true);
       setError("");
       const query = type === "all" ? "" : "?type=" + type;
       const response = await api.get("/history" + query);
+      historyCache.set(type, response.data);
       setData(response.data);
     } catch (err) {
       console.error(err);
-      setError("History could not load. Make sure backend is running on port 5000.");
+      if (!historyCache.has(type)) {
+        setError("History could not load. Make sure backend is running on port 5000.");
+      }
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    // Use cache immediately if available, then refresh in background
+    if (historyCache.has(activeTab)) {
+      setData(historyCache.get(activeTab));
+      setLoading(false);
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) loadHistory(activeTab);
     });
@@ -73,7 +85,10 @@ export default function History() {
     if (item.historyKind === "quiz-attempt") {
       return item.status === "in_progress" ? "In progress" : "Completed";
     }
-    return "Completed"; 
+    if (item.historyKind === "saved-quiz" || item.type === "quiz") {
+      return "Not started";
+    }
+    return null; // notes/conversations don't need a status badge
   };
 
   const getTypeLabel = (item) => {
@@ -87,7 +102,7 @@ export default function History() {
     if (item.historyKind === "quiz-attempt" && item.scoreText) {
       return item.scoreText;
     }
-    return "100%";
+    return null; // no progress to show for non-attempts
   };
 
   function getDeleteEndpoint(item) {
@@ -186,7 +201,7 @@ export default function History() {
               onClick={() => setActiveTab(id)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                 activeTab === id 
-                  ? 'bg-[var(--theme-text-primary)] text-[var(--theme-bg-primary)] shadow-sm' 
+                  ? 'bg-[var(--color-primary-500)] text-white shadow-md' 
                   : 'bg-[var(--theme-bg-secondary)] border border-[var(--theme-glass-border)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]'
               }`}
             >
