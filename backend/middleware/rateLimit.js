@@ -1,11 +1,16 @@
-const rateLimit = require("express-rate-limit");
+const { ipKeyGenerator, rateLimit } = require("express-rate-limit");
 
 exports.strictLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 5,
+  // Note generation can involve a few related requests (notes, retries, and
+  // quizzes). Five requests is too restrictive during ordinary use.
+  max: Number(process.env.AI_RATE_LIMIT_MAX) || 20,
+  // AI routes run after authentication, so one student's activity should not
+  // exhaust the allowance for every user sharing the same network.
+  keyGenerator: (req) => req.user?.uid || ipKeyGenerator(req.ip),
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: "Too many requests. Please slow down." },
+  message: { success: false, message: "Too many AI requests. Please wait a minute and try again." },
 });
 
 exports.generalLimiter = rateLimit({

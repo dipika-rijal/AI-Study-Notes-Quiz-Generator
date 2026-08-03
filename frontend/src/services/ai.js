@@ -232,7 +232,11 @@ export async function* streamAIChatResponse(messages) {
   });
 
   if (!response.ok) {
-    throw new Error(`AI stream request failed: ${response.status}`);
+    const errorBody = await response.json().catch(() => ({}));
+    const error = new Error(errorBody.message || `AI stream request failed: ${response.status}`);
+    error.status = response.status;
+    error.retryAfter = response.headers.get("retry-after") || response.headers.get("ratelimit-reset");
+    throw error;
   }
 
   const reader = response.body.getReader();

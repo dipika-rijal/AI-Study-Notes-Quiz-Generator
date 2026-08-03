@@ -85,14 +85,42 @@ function isDevelopment() {
   return import.meta.env.DEV;
 }
 
+function getHttpStatus(error) {
+  if (Number.isInteger(error?.response?.status)) return error.response.status;
+  if (Number.isInteger(error?.status)) return error.status;
+
+  const statusMatch = error?.message?.match(/\b([45]\d{2})\b/);
+  return statusMatch ? Number(statusMatch[1]) : null;
+}
+
+function isRateLimited(error) {
+  return getHttpStatus(error) === 429;
+}
+
+function getRetryAfterMs(error) {
+  const retryAfter = error?.retryAfter || error?.response?.headers?.["retry-after"] || error?.response?.headers?.["ratelimit-reset"];
+  const seconds = Number.parseFloat(retryAfter);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds * 1000) : 60_000;
+}
+
+function formatRetryWait(milliseconds) {
+  const seconds = Math.max(1, Math.ceil(milliseconds / 1000));
+  return seconds >= 60 ? `${Math.ceil(seconds / 60)} minute${seconds >= 120 ? "s" : ""}` : `${seconds} seconds`;
+}
+
 function getDevelopmentErrorMessage(error, fallback) {
+  if (isRateLimited(error)) {
+    return `The AI is temporarily busy. Please try again in ${formatRetryWait(getRetryAfterMs(error))}.`;
+  }
   if (!isDevelopment()) return fallback;
   if (error?.message) return error.message;
   return fallback;
 }
 
 function logDevelopmentError(label, error, context = {}) {
-  if (!isDevelopment()) return;
+  // A 429 is an expected throttle response. It is shown clearly in the UI and
+  // does not need a noisy console error, especially during mobile testing.
+  if (!isDevelopment() || isRateLimited(error)) return;
   console.error(`[Conversation:${label}] context`, context);
   console.error(`[Conversation:${label}] complete error object`, error);
   console.error(`[Conversation:${label}] stack trace`, error?.stack || "No stack trace available");
@@ -446,6 +474,7 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
   const [learningProfile, setLearningProfile] = useState(null);
 
   const activeStreamRef = useRef(null);
+  const rateLimitResetAtRef = useRef(0);
 
   useEffect(() => {
     getPreferences().then((data) => {
@@ -681,6 +710,12 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
    */
   const streamAIResponse = useCallback(async (promptHistory, messageType, customFields = {}) => {
     const { showFollowUpActions = messageType === "notes", ...messageFields } = customFields;
+    const cooldownRemaining = rateLimitResetAtRef.current - Date.now();
+
+    if (cooldownRemaining > 0) {
+      setErrorMessage(`The AI is temporarily busy. Please try again in ${formatRetryWait(cooldownRemaining)}.`);
+      return;
+    }
 
     setLoadingState("generating");
     setConversationStep("generating");
@@ -732,6 +767,23 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
     } catch (error) {
       logDevelopmentError("streamAIResponse", error, { promptHistory, messageType });
 
+      // Retrying through the non-streaming endpoint after a 429 simply consumes
+      // another limited request and produces a second, less useful error.
+      if (isRateLimited(error)) {
+        rateLimitResetAtRef.current = Date.now() + getRetryAfterMs(error);
+        const displayMessage = getDevelopmentErrorMessage(error, "I couldn't generate that response.");
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId
+              ? { ...msg, content: displayMessage, type: "text", status: "error" }
+              : msg
+          )
+        );
+        setErrorMessage(displayMessage);
+        setConversationStep("finished");
+        return;
+      }
+
       try {
         const fallbackContent = await generateChatCompletion(promptHistory);
         setMessages((prev) =>
@@ -752,6 +804,9 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
         }
       } catch (fallbackError) {
         logDevelopmentError("streamAIResponseFallback", fallbackError, { promptHistory, messageType });
+        if (isRateLimited(fallbackError)) {
+          rateLimitResetAtRef.current = Date.now() + getRetryAfterMs(fallbackError);
+        }
         const displayMessage = getDevelopmentErrorMessage(fallbackError, "I couldn't generate that response.");
         setMessages((prev) =>
           prev.map((msg) =>
@@ -773,6 +828,12 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
    * Generates a structured JSON response (used for quizzes and flashcards).
    */
   const generateStructuredResponse = useCallback(async (promptHistory, messageType) => {
+    const cooldownRemaining = rateLimitResetAtRef.current - Date.now();
+    if (cooldownRemaining > 0) {
+      setErrorMessage(`The AI is temporarily busy. Please try again in ${formatRetryWait(cooldownRemaining)}.`);
+      return;
+    }
+
     setLoadingState("generating");
     setConversationStep("generating");
 
@@ -831,6 +892,9 @@ export function useConversationFlow({ conversationId: propConversationId, savedN
       setConversationStep("finished");
     } catch (error) {
       logDevelopmentError("generateStructuredResponse", error, { promptHistory, messageType });
+      if (isRateLimited(error)) {
+        rateLimitResetAtRef.current = Date.now() + getRetryAfterMs(error);
+      }
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === messageId

@@ -111,10 +111,13 @@ app.use((err, req, res, next) => {
   console.error(err);
 
   const isDev = process.env.NODE_ENV === "development";
+  if (err.retryAfter) res.setHeader("Retry-After", err.retryAfter);
 
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal server error",
+    message: err.status === 429
+      ? "The AI provider is temporarily busy. Please try again after the retry time."
+      : err.message || "Internal server error",
     ...(isDev && { stack: err.stack }),
   });
 });

@@ -43,6 +43,7 @@ exports.generateChatCompletion = async (req, res, next) => {
       try { groqMessage = JSON.parse(body)?.error?.message || ""; } catch {}
       const err = new Error(`Groq API error ${response.status}: ${groqMessage || body.slice(0, 200)}`);
       err.status = response.status === 429 ? 429 : 502;
+      err.retryAfter = response.headers.get("retry-after");
       throw err;
     }
 
@@ -89,6 +90,7 @@ exports.streamAIChatResponse = async (req, res, next) => {
       try { groqMessage = JSON.parse(body)?.error?.message || ""; } catch {}
       const err = new Error(`Groq API error ${response.status}: ${groqMessage || body.slice(0, 200)}`);
       err.status = response.status === 429 ? 429 : 502;
+      err.retryAfter = response.headers.get("retry-after");
       throw err;
     }
 

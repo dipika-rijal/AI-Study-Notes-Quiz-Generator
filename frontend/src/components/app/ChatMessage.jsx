@@ -84,7 +84,7 @@ export default function ChatMessage({
             })}
           />
         ) : type === "quiz" ? (
-          <Suspense fallback={<div className="p-4 bg-purple-50 rounded-2xl animate-pulse text-xs text-[#6757ff]">Loading Quiz...</div>}>
+          <Suspense fallback={<div className="p-4 bg-[var(--theme-bg-tertiary)] rounded-2xl animate-pulse text-xs text-[var(--color-primary-500)]">Loading Quiz...</div>}>
             <InteractiveQuiz 
               data={data} 
               initialAnswers={message.quizState || {}}
@@ -93,12 +93,12 @@ export default function ChatMessage({
             />
           </Suspense>
         ) : type === "flashcards" ? (
-          <Suspense fallback={<div className="p-4 bg-purple-50 rounded-2xl animate-pulse text-xs text-[#6757ff]">Loading Flashcards...</div>}>
+          <Suspense fallback={<div className="p-4 bg-[var(--theme-bg-tertiary)] rounded-2xl animate-pulse text-xs text-[var(--color-primary-500)]">Loading Flashcards...</div>}>
             <FlashcardViewer data={data} />
           </Suspense>
         ) : (
           <div
-            className={`rounded-2xl px-5 py-4 shadow-sm dark:shadow-none leading-relaxed text-[15px] select-text
+            className={`rounded-2xl px-5 py-4 shadow-sm leading-relaxed text-[15px] select-text
               ${
                 isUser
                 ? "bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] text-[var(--theme-text-primary)] rounded-tr-sm"

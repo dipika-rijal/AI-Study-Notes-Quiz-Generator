@@ -60,25 +60,25 @@ export default function ChatPage() {
   return (
     <div className="mx-auto flex h-[calc(100vh-6.25rem)] lg:h-[calc(100vh-4rem)] w-full max-w-6xl flex-col bg-transparent">
       {/* Chat header area */}
-      <header className="mb-2 flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-3 select-none">
-        <div className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-lg text-[var(--color-primary-600)]">
+      <header className="mb-2 flex flex-col gap-3 border-b border-[var(--theme-glass-border)] pb-3 select-none sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--theme-glass-border)] bg-[var(--theme-bg-tertiary)] text-lg text-[var(--color-primary-600)]">
             ✦
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold tracking-[-0.035em] text-[var(--theme-text-primary)]">
                 Study Assistant
               </h1>
               <span className="hidden sm:flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-[var(--color-primary-500)]"><Sparkles size={10} /> StudyGen AI</span>
             </div>
-            <p className="text-xs text-[var(--theme-text-secondary)]">
+            <p className="text-xs leading-4 text-[var(--theme-text-secondary)]">
               Turn study material into clear notes, quizzes, and explanations.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:shrink-0">
           {hasConversationMessages && (
             <button
               type="button"

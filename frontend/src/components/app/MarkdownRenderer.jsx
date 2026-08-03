@@ -41,24 +41,24 @@ export default function MarkdownRenderer({ content }) {
             }
             if (textContent.startsWith("💡")) {
               return (
-                <div className="my-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/30 text-[var(--theme-text-primary)] font-medium shadow-sm flex items-start gap-3">
-                  <Lightbulb className="w-5 h-5 shrink-0 text-amber-500" />
+                <div className="my-5 p-4 rounded-2xl bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-[var(--theme-text-primary)] font-medium shadow-sm flex items-start gap-3">
+                  <Lightbulb className="w-5 h-5 shrink-0 text-[var(--color-warning-text)]" />
                   <div>{children}</div>
                 </div>
               );
             }
             if (textContent.startsWith("⚠️")) {
               return (
-                <div className="my-5 p-4 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 text-[var(--theme-text-primary)] font-medium shadow-sm flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 shrink-0 text-red-500" />
+                <div className="my-5 p-4 rounded-2xl bg-[var(--color-error-bg)] border border-[var(--color-error-border)] text-[var(--theme-text-primary)] font-medium shadow-sm flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 shrink-0 text-[var(--color-error-text)]" />
                   <div>{children}</div>
                 </div>
               );
             }
             if (textContent.startsWith("🎯")) {
               return (
-                <div className="my-5 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 text-[var(--theme-text-primary)] font-medium shadow-sm flex items-start gap-3">
-                  <Target className="w-5 h-5 shrink-0 text-emerald-500" />
+                <div className="my-5 p-4 rounded-2xl bg-[var(--color-success-bg)] border border-[var(--color-success-border)] text-[var(--theme-text-primary)] font-medium shadow-sm flex items-start gap-3">
+                  <Target className="w-5 h-5 shrink-0 text-[var(--color-success-text)]" />
                   <div>{children}</div>
                 </div>
               );
@@ -94,7 +94,7 @@ export default function MarkdownRenderer({ content }) {
             }
 
             return (
-              <code className="rounded-md bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] px-1.5 py-0.5 font-mono text-[13px] font-medium text-[var(--color-primary-600)] dark:text-[var(--color-primary-400)]" {...props}>
+              <code className="rounded-md bg-[var(--theme-bg-tertiary)] border border-[var(--theme-glass-border)] px-1.5 py-0.5 font-mono text-[13px] font-medium text-[var(--color-primary-600)]" {...props}>
                 {children}
               </code>
             );
