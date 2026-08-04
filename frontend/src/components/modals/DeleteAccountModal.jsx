@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Trash2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { auth } from '../../config/firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, deleteUser } from 'firebase/auth';
 
 export default function DeleteAccountModal({ isOpen, onClose, user }) {
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
@@ -13,6 +14,7 @@ export default function DeleteAccountModal({ isOpen, onClose, user }) {
   // Reset form when modal opens/closes
   const handleClose = () => {
     setPassword('');
+    setShowPassword(false);
     setConfirmText('');
     setError('');
     onClose();
@@ -136,14 +138,25 @@ export default function DeleteAccountModal({ isOpen, onClose, user }) {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-[var(--theme-text-muted)] uppercase tracking-wider ml-1">Current Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Enter password to verify"
-                    className="w-full rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-primary)] px-4 py-3 text-sm text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-muted)] focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Enter password to verify"
+                      className="w-full rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-primary)] px-4 py-3 pr-12 text-sm text-[var(--theme-text-primary)] placeholder:text-[var(--theme-text-muted)] focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      title={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] transition-colors p-1"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
               </div>
 

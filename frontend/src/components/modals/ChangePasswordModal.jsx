@@ -143,7 +143,7 @@ export default function ChangePasswordModal({ isOpen, onClose, user }) {
                       placeholder="Enter current password"
                       className={inputClass}
                     />
-                    <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)} className={toggleBtnClass}>
+                    <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)} aria-label={showCurrentPw ? "Hide password" : "Show password"} title={showCurrentPw ? "Hide password" : "Show password"} className={toggleBtnClass}>
                       {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
@@ -160,7 +160,7 @@ export default function ChangePasswordModal({ isOpen, onClose, user }) {
                       placeholder="Enter new password"
                       className={inputClass}
                     />
-                    <button type="button" onClick={() => setShowNewPw(!showNewPw)} className={toggleBtnClass}>
+                    <button type="button" onClick={() => setShowNewPw(!showNewPw)} aria-label={showNewPw ? "Hide password" : "Show password"} title={showNewPw ? "Hide password" : "Show password"} className={toggleBtnClass}>
                       {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
@@ -177,7 +177,7 @@ export default function ChangePasswordModal({ isOpen, onClose, user }) {
                       placeholder="Re-enter new password"
                       className={inputClass}
                     />
-                    <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} className={toggleBtnClass}>
+                    <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} aria-label={showConfirmPw ? "Hide password" : "Show password"} title={showConfirmPw ? "Hide password" : "Show password"} className={toggleBtnClass}>
                       {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
