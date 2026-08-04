@@ -144,6 +144,17 @@ body {
   line-height: 1.6;
 }
 
+/* Keep Chrome autofill on the theme instead of white with black text */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--theme-bg-primary) inset !important;
+  -webkit-text-fill-color: var(--theme-text-primary) !important;
+  caret-color: var(--theme-text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    🪟 CARDS & SURFACES
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */

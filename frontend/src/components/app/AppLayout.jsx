@@ -5,6 +5,7 @@ import { LogOut, Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import StreakWidget from './StreakWidget';
 import { pageMotion } from '../../lib/motion';
+import { HistorySessionsProvider } from '../../context/HistorySessionsContext';
 
 export default function AppLayout({ user, logout }) {
   const location = useLocation();
@@ -17,6 +18,7 @@ export default function AppLayout({ user, logout }) {
   }
 
   return (
+    <HistorySessionsProvider userId={user?.uid}>
     <div className="min-h-screen bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)]">
       <div className="flex min-h-screen">
         <Sidebar user={user} logout={() => setIsSignOutDialogOpen(true)} mobileOpen={isSidebarOpen} onMobileClose={() => setIsSidebarOpen(false)} />
@@ -74,5 +76,6 @@ export default function AppLayout({ user, logout }) {
         )}
       </AnimatePresence>
     </div>
+    </HistorySessionsProvider>
   );
 }
