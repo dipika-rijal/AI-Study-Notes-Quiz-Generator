@@ -30,6 +30,16 @@ function formatCorrectOption(question, answer) {
   return text || "Unknown";
 }
 
+function selectedLetterForAnswer(answer) {
+  const explicitLetter = answer?.selectedAnswer || answer?.userAnswer;
+  if (OPTION_LETTERS.includes(explicitLetter)) return explicitLetter;
+
+  const index = answer?.selectedOptionIndex;
+  return Number.isInteger(index) && index >= 0 && index < OPTION_LETTERS.length
+    ? OPTION_LETTERS[index]
+    : null;
+}
+
 function inferAreas(quizQuestions, answers) {
   const strong = [];
   const weak = [];
@@ -40,8 +50,9 @@ function inferAreas(quizQuestions, answers) {
     const answer = answers[index];
     if (!answer) return;
     
-    // Determine if correct based on answer object or recalculate
-    const selectedLetter = answer.selectedAnswer || answer.userAnswer || (answer.selectedOptionIndex !== undefined && answer.selectedOptionIndex !== null ? OPTION_LETTERS[answer.selectedOptionIndex] : null);
+    // Only an explicit, valid selection counts as the user's answer.
+    const selectedLetter = selectedLetterForAnswer(answer);
+    if (!selectedLetter) return;
     const correctLetter = question.correctAnswer || (answer.correctOptionIndex !== undefined ? OPTION_LETTERS[answer.correctOptionIndex] : null);
     
     const isCorrect = answer.isCorrect !== undefined ? answer.isCorrect : (selectedLetter === correctLetter);
@@ -179,9 +190,10 @@ export default function QuizReview({ quiz, answers, score, totalQuestions, attem
           const answer = answers[index];
           if (!answer) return null;
 
-          const selectedLetter = answer.selectedAnswer || answer.userAnswer || (answer.selectedOptionIndex !== undefined && answer.selectedOptionIndex !== null ? OPTION_LETTERS[answer.selectedOptionIndex] : null);
+          const selectedLetter = selectedLetterForAnswer(answer);
+          const hasUserAnswer = Boolean(selectedLetter);
           const correctLetter = question.correctAnswer || (answer.correctOptionIndex !== undefined ? OPTION_LETTERS[answer.correctOptionIndex] : null);
-          const isCorrect = answer.isCorrect !== undefined ? answer.isCorrect : (selectedLetter === correctLetter);
+          const isCorrect = hasUserAnswer && (answer.isCorrect !== undefined ? answer.isCorrect : selectedLetter === correctLetter);
 
           return (
             <div key={index} className="rounded-2xl border border-purple-50 dark:border-[#424242] bg-[#fffcf8] dark:bg-[#171717] p-5 shadow-sm dark:shadow-none space-y-3">
@@ -191,12 +203,14 @@ export default function QuizReview({ quiz, answers, score, totalQuestions, attem
                 </h4>
                 <span
                   className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase ${
-                    isCorrect
+                    !hasUserAnswer
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : isCorrect
                       ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
                       : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
                   }`}
                 >
-                  {isCorrect ? "Correct" : "Incorrect"}
+                  {!hasUserAnswer ? "Not answered" : isCorrect ? "Correct" : "Incorrect"}
                 </span>
               </div>
 
@@ -235,7 +249,7 @@ export default function QuizReview({ quiz, answers, score, totalQuestions, attem
                 })()}
               </div>
 
-              {!isCorrect && (
+              {(!hasUserAnswer || !isCorrect) && (
                 <p className="text-[11px] font-bold text-red-700 dark:text-red-400 mt-2">
                   Correct answer: {formatCorrectOption(question, answer)}
                 </p>
