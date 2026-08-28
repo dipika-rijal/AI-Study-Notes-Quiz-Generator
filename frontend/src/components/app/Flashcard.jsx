@@ -21,10 +21,10 @@ export default function Flashcard({
   };
 
   return (
-    <div className="relative w-full max-w-lg h-80 mx-auto perspective-1000">
+    <div className="w-full max-w-lg mx-auto perspective-1000">
       <AnimatePresence>
         <motion.div
-          className="w-full h-full cursor-grab active:cursor-grabbing relative preserve-3d"
+          className="h-64 sm:h-80 w-full cursor-grab active:cursor-grabbing relative preserve-3d"
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
@@ -59,7 +59,7 @@ export default function Flashcard({
       </AnimatePresence>
       
       {/* Keyboard Hint */}
-      <div className="absolute -bottom-12 left-0 right-0 flex justify-between items-center text-xs font-medium text-[var(--theme-text-muted)] px-4">
+      <div className="mt-3 grid grid-cols-3 items-center gap-1 px-1 text-center text-[10px] font-medium leading-4 text-[var(--theme-text-muted)] sm:text-xs">
         <span>← Need practice</span>
         <span>Swipe or use arrows</span>
         <span>Know it →</span>

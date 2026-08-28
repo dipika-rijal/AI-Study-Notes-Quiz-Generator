@@ -19,7 +19,7 @@ export default function AppLayout({ user, logout }) {
 
   return (
     <HistorySessionsProvider userId={user?.uid}>
-    <div className="min-h-screen bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)]">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)]">
       <div className="flex min-h-screen">
         <Sidebar user={user} logout={() => setIsSignOutDialogOpen(true)} mobileOpen={isSidebarOpen} onMobileClose={() => setIsSidebarOpen(false)} />
         <main className="relative min-h-screen min-w-0 flex-1 overflow-y-auto px-5 pb-5 pt-20 sm:px-8 lg:px-10 lg:py-8">

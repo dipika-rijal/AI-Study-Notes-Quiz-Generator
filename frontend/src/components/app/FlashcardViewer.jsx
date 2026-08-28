@@ -50,7 +50,7 @@ export default function FlashcardViewer({ data }) {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 md:p-6 shadow-sm overflow-hidden relative">
+    <div className="w-full min-w-0 max-w-3xl mx-auto rounded-xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 md:p-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-[var(--theme-glass-border)] pb-3 mb-4 flex-wrap gap-2">
         <h2 className="text-xs font-semibold tracking-wider uppercase text-[var(--theme-text-muted)]">
           Flashcards
@@ -61,7 +61,7 @@ export default function FlashcardViewer({ data }) {
         </div>
       </div>
 
-      <div className="relative min-h-[250px] md:min-h-[300px] flex items-center justify-center">
+      <div className="relative flex items-center justify-center">
         <AnimatePresence mode="popLayout">
           {!isComplete ? (
             <motion.div

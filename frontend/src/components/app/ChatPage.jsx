@@ -103,7 +103,7 @@ export default function ChatPage() {
       {/* Main Conversation viewport */}
       <main
         ref={scrollContainerRef}
-        className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 md:p-6"
+        className="mb-4 flex-1 space-y-4 overflow-x-hidden overflow-y-auto rounded-2xl border border-[var(--theme-glass-border)] bg-[var(--theme-bg-secondary)] p-4 md:p-6"
       >
         <div className="mx-auto max-w-[900px] space-y-5">
           {messages.map((message) => (
