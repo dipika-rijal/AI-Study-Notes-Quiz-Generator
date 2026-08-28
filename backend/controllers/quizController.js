@@ -2,8 +2,8 @@ const Quiz = require("../models/Quiz.js");
 const QuizAttempt = require("../models/QuizAttempt.js");
 const UserPreference = require("../models/UserPreference.js");
 const extractJson = require("../utils/extractJson.js");
+const { GROQ_MODEL } = require("../config/groq.js");
 
-const GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
 function getGroqApiKey() {
