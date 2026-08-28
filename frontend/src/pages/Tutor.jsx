@@ -49,7 +49,7 @@ export default function Tutor() {
               </h1>
             </div>
             <p className="text-xs text-[var(--theme-text-secondary)]">
-              Your personal AI teacher that remembers your weaknesses.
+              Your 24/7 interactive study companion that adapts to how you learn.
             </p>
           </div>
         </div>

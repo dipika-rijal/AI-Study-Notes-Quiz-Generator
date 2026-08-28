@@ -24,7 +24,7 @@ exports.validatePlan = [
   }
 ];
 function getGroqApiKey() {
-  return process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "";
+  return process.env.GROQ_API_KEY || "";
 }
 
 async function callGroqAI(messages) {
@@ -34,7 +34,7 @@ async function callGroqAI(messages) {
   const response = await axios.post(
     "https://api.groq.com/openai/v1/chat/completions",
     {
-      model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+      model: process.env.GROQ_MODEL || "qwen/qwen3.8-27b",
       messages,
       temperature: 0.35,
       max_tokens: 4096,

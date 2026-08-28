@@ -3,11 +3,11 @@ const QuizAttempt = require("../models/QuizAttempt.js");
 const UserPreference = require("../models/UserPreference.js");
 const extractJson = require("../utils/extractJson.js");
 
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+const GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 const OPTION_LETTERS = ["A", "B", "C", "D"];
 
 function getGroqApiKey() {
-  return process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "";
+  return process.env.GROQ_API_KEY || "";
 }
 
 function normalizeLetter(value) {

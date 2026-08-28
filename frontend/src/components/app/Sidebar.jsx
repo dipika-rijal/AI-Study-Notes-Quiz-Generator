@@ -13,7 +13,9 @@ const navigation = [
 
 function SidebarContent({ user, logout, onNavigate, onClose }) {
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'Student';
-  const initials = displayName.slice(0, 2).toUpperCase();
+  const initials = displayName.includes(' ')
+    ? displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : displayName.slice(0, 2).toUpperCase();
   return <>
     <div className="mb-7 flex items-center justify-between">
       <NavLink to="/app" end onClick={onNavigate} className="flex items-center gap-3 rounded-xl px-3 py-2">
@@ -31,7 +33,13 @@ function SidebarContent({ user, logout, onNavigate, onClose }) {
     </nav>
 
     <div className="space-y-1 border-t border-[var(--theme-glass-border)] pt-3">
-      <NavLink to="/app/settings" onClick={onNavigate} className="flex items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-[var(--theme-surface-hover)]">{user?.photoURL ? <img src={user.photoURL} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" /> : <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-primary-500)] text-xs font-semibold text-white">{initials}</span>}<span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--theme-text-primary)]">{displayName}</span><span className="block truncate text-xs text-[var(--theme-text-muted)]">Personal workspace</span></span></NavLink>
+      <NavLink to="/app/settings" onClick={onNavigate} className="flex items-center gap-3 rounded-lg p-2.5 text-left transition-colors hover:bg-[var(--theme-surface-hover)]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--color-primary-500)] text-xs font-semibold text-white">{initials}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-[var(--theme-text-primary)]">{displayName}</span>
+          <span className="block truncate text-xs text-[var(--theme-text-muted)]">Personal workspace</span>
+        </span>
+      </NavLink>
       <motion.button whileTap={{ scale: 0.98 }} onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--theme-text-secondary)] transition-colors hover:bg-red-500/10 hover:text-red-400"><LogOut size={17} strokeWidth={1.8} />Sign out</motion.button>
     </div>
   </>;

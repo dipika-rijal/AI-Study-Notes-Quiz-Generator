@@ -1,7 +1,7 @@
-const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 
 function getGroqApiKey() {
-  return process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || "";
+  return process.env.GROQ_API_KEY || "";
 }
 
 exports.generateChatCompletion = async (req, res, next) => {

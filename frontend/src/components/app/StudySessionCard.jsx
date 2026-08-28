@@ -35,7 +35,7 @@ export default function StudySessionCard({
       whileHover={{ y: -2, backgroundColor: 'var(--theme-bg-tertiary)' }}
       className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-[var(--theme-bg-secondary)] border border-[var(--theme-glass-border)] rounded-xl transition-all duration-300"
     >
-      <div className="flex-1 min-w-0 mb-4 sm:mb-0">
+      <div className="flex-1 min-w-0 w-full mb-4 sm:mb-0">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-secondary)]">
             {type}
@@ -43,7 +43,7 @@ export default function StudySessionCard({
           <span className="text-[var(--theme-text-muted)]">•</span>
           <span className="text-xs text-[var(--theme-text-muted)]">{date}</span>
         </div>
-        <h4 className="text-lg font-medium text-[var(--theme-text-primary)] truncate">
+        <h4 className="text-lg font-medium text-[var(--theme-text-primary)] line-clamp-2 break-all">
           {topic}
         </h4>
         {status && (

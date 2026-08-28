@@ -1,7 +1,7 @@
 import api from "../api/axios";
 import { auth } from "../config/firebase";
 
-const MODEL = "llama-3.1-8b-instant";
+const MODEL = "qwen/qwen3.8-27b";
 
 function cleanText(value, fallback = "") {
   if (typeof value !== "string") return fallback;
