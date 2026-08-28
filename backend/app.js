@@ -123,13 +123,20 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-connectDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`StudyGen backend running on http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+// AI chat uses Firebase authentication and does not depend on MongoDB. Keep
+// the web service available while Atlas is reconnecting so Render does not
+// return a gateway error for every AI request.
+app.listen(PORT, () => {
+  console.log(`StudyGen backend running on http://localhost:${PORT}`);
+});
+
+async function connectDatabaseWithRetry() {
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error("MongoDB connection failed; retrying in 30 seconds:", err.message);
+    setTimeout(connectDatabaseWithRetry, 30_000);
+  }
+}
+
+connectDatabaseWithRetry();
