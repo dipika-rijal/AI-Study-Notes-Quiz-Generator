@@ -1,4 +1,22 @@
-const GROQ_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
+const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b";
+const RETIRED_GROQ_MODELS = new Set([
+  "llama-3.1-8b-instant",
+  "llama-3.3-70b-versatile",
+]);
+
+// Keep an old Render environment value from breaking every AI request after a
+// Groq model retirement. Other explicitly configured, supported models remain
+// usable.
+const configuredGroqModel = process.env.GROQ_MODEL;
+const GROQ_MODEL = RETIRED_GROQ_MODELS.has(configuredGroqModel)
+  ? DEFAULT_GROQ_MODEL
+  : configuredGroqModel || DEFAULT_GROQ_MODEL;
+
+if (configuredGroqModel && RETIRED_GROQ_MODELS.has(configuredGroqModel)) {
+  console.warn(
+    `GROQ_MODEL ${configuredGroqModel} is retired; using ${DEFAULT_GROQ_MODEL} instead.`
+  );
+}
 
 function getGroqApiKey() {
   return process.env.GROQ_API_KEY || "";
